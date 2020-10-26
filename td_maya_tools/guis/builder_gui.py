@@ -38,9 +38,10 @@
 from PySide2 import QtGui, QtWidgets
 from maya import OpenMayaUI as omui
 from shiboken2 import wrapInstance
+import maya.cmds as cmds
 
 # Imports That You Wrote
-# N/A
+import td_maya_tools.stacker
 
 #----------------------------------------------------------------------------------------#
 #--------------------------------------------------------------------------- FUNCTIONS --#
@@ -65,6 +66,15 @@ class BuilderGUI:
         Accepts no arguments
         Declares all the variables that will be necessary for the GUI to function
         """
+        QtWidgets.QDialog.__init__(self, parent=get_maya_window())
+        self.main_vLayout = None
+        self.lineEdit1 = None
+        self.lineEdit2 = None
+        self.lineEdit3 = None
+        self.selection1 = None
+        self.selection2 = None
+        self.selection3 = None
+
     def init_gui(self):
         """
         Accepts no arguments
@@ -75,12 +85,80 @@ class BuilderGUI:
         A 'Cancel' button, which calls 'self.close' to close the GUI
             (you don't need to write 'self.close', every GUI has it)
         """
+        # Create the main layout (Vertical)
+        self.main_vLayout = QtWidgets.QVBoxLayout(self)
+
+        # Create the three row layouts (Horizontal)
+        row1_hLayout = QtWidgets.QHBoxLayout()
+        row2_hLayout = QtWidgets.QHBoxLayout()
+        row3_hLayout = QtWidgets.QHBoxLayout()
+        # Add the row layouts to the main layout
+        self.main_vLayout.addWidget(row1_hLayout)
+        self.main_vLayout.addWidget(row2_hLayout)
+        self.main_vLayout.addWidget(row3_hLayout)
+
+        # Create the buttons and line edits
+        button1 = QtWidgets.QPushButton('Set Selection')
+        button2 = QtWidgets.QPushButton('Set Selection')
+        button3 = QtWidgets.QPushButton('Set Selection')
+        self.lineEdit1 = QtWidgets.QLineEdit()
+        self.lineEdit2 = QtWidgets.QLineEdit()
+        self.lineEdit3 = QtWidgets.QLineEdit()
+        # Connect the buttons to 'Set Selection'
+        button1.toggled.connect(self.set_selection)
+        button2.toggled.connect(self.set_selection)
+        button3.toggled.connect(self.set_selection)
+        # Add the buttons and line edits to the rows
+        row1_hLayout.addWidget(self.lineEdit1)
+        row1_hLayout.addWidget(button1)
+        row2_hLayout.addWidget(self.lineEdit2)
+        row2_hLayout.addWidget(button2)
+        row3_hLayout.addWidget(self.lineEdit3)
+        row3_hLayout.addWidget(button3)
+
+        # A label and a line edit that allows the user to specify how many stacks to make
+        label_stackAmt = QtWidgets.QLabel()
+        lineEdit_stackAmt = QtWidgets.QLineEdit()
+        # Create a new row to hold the stack amount control
+        stackRow_hLayout = QtWidgets.QHBoxLayout()
+        self.main_vLayout.addWidget(stackRow_hLayout)
+        # Add the buttons / line edits to the a new row
+        stackRow_hLayout.addWidget(label_stackAmt)
+        stackRow_hLayout.addWidget(lineEdit_stackAmt)
+
+        # A 'Make Stacks' button to make each stack by calling 'make_stacks'
+        button_stack = QtWidgets.QPushButton('Make Stacks')
+        # Add the buttons / line edits to the middle row
+        self.main_vLayout.addWidget(button_stack)
+
+        # A 'Cancel' button, which calls 'self.close' to close the GUI
+        button_cancel = QtWidgets.QPushButton('Cancel')
+        # Add the buttons / line edits to the bottom row
+        self.main_vLayout.addWidget(button_cancel)
+
+        # Configure the window
+        self.setGeometry(300, 300, 250, 450)
+        self.setWindowTitle('Stack Builder')
+        self.show()
+
     def set_selection(self):
         """
         Accepts no arguments
         Uses the sender to determine which button called it
         Updates the appropriate line edit with the transform of the selection that was set
         """
+        sender = self.sender()
+        if sender:
+            if sender.objectname() == 'button1':
+                self.selection1 = cmds.ls(selection=True, tail=1)
+                self.lineEdit1.setText(self.selection1)
+            if sender.objectname() == 'button2':
+                self.selection2 = cmds.ls(selection=True, tail=1)
+                self.lineEdit2.setText(self.selection2)
+            if sender.objectname() == 'button3':
+                self.selection3 = cmds.ls(selection=True, tail=1)
+                self.lineEdit3.setText(self.selection3)
+
     def make_stacks(self):
         """
         Accepts no arguments
@@ -93,6 +171,7 @@ class BuilderGUI:
         The first group created will be called 'stack001', the second 'stack002', etc
         Returns True if it completes without an error
         """
+
     def verify_args(self):
         """
         Accepts no arguments
@@ -105,6 +184,7 @@ class BuilderGUI:
         It returns None
         If all of the arguments have a value which is valid, it returns True
         """
+
     def warn_user(self, title, message):
         """
         Accepts two arguments, a title and a message
