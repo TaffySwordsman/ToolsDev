@@ -39,6 +39,7 @@ from PySide2 import QtGui, QtWidgets
 from maya import OpenMayaUI as omui
 from shiboken2 import wrapInstance
 import maya.cmds as cmds
+import random
 
 # Imports That You Wrote
 import td_maya_tools.stacker
@@ -67,6 +68,11 @@ class BuilderGUI(QtWidgets.QDialog):
         Declares all the variables that will be necessary for the GUI to function
         """
         QtWidgets.QDialog.__init__(self, parent=get_maya_window())
+        self.main_vLayout = None
+        self.lineEdit1 = None
+        self.lineEdit2 = None
+        self.lineEdit3 = None
+        self.lineEdit_stackAmt = None
 
     def init_gui(self):
         """
@@ -78,6 +84,67 @@ class BuilderGUI(QtWidgets.QDialog):
         A 'Cancel' button, which calls 'self.close' to close the GUI
             (you don't need to write 'self.close', every GUI has it)
         """
+        # Create the main layout (Vertical)
+        self.main_vLayout = QtWidgets.QVBoxLayout(self)
+
+        # Create the three row layouts (Horizontal)
+        row1_hLayout = QtWidgets.QHBoxLayout()
+        row2_hLayout = QtWidgets.QHBoxLayout()
+        row3_hLayout = QtWidgets.QHBoxLayout()
+        # Add the row layouts to the main layout
+        self.main_vLayout.addLayout(row1_hLayout)
+        self.main_vLayout.addLayout(row2_hLayout)
+        self.main_vLayout.addLayout(row3_hLayout)
+
+        # Create the buttons and line edits
+        button1 = QtWidgets.QPushButton('Set Selection')
+        button2 = QtWidgets.QPushButton('Set Selection')
+        button3 = QtWidgets.QPushButton('Set Selection')
+        self.lineEdit1 = QtWidgets.QLineEdit()
+        self.lineEdit2 = QtWidgets.QLineEdit()
+        self.lineEdit3 = QtWidgets.QLineEdit()
+        # Name the buttons
+        button1.setObjectName('button1')
+        button2.setObjectName('button2')
+        button3.setObjectName('button3')
+        # Connect the buttons to 'Set Selection'
+        button1.clicked.connect(self.set_selection)
+        button2.clicked.connect(self.set_selection)
+        button3.clicked.connect(self.set_selection)
+        # Add the buttons and line edits to the rows
+        row1_hLayout.addWidget(self.lineEdit1)
+        row1_hLayout.addWidget(button1)
+        row2_hLayout.addWidget(self.lineEdit2)
+        row2_hLayout.addWidget(button2)
+        row3_hLayout.addWidget(self.lineEdit3)
+        row3_hLayout.addWidget(button3)
+
+        # A label and a line edit that allows the user to specify how many stacks to make
+        label_stackAmt = QtWidgets.QLabel('Stack Amount')
+        self.lineEdit_stackAmt = QtWidgets.QLineEdit()
+        # Create a new row to hold the stack amount control
+        stackRow_hLayout = QtWidgets.QHBoxLayout()
+        self.main_vLayout.addLayout(stackRow_hLayout)
+        # Add the buttons / line edits to the a new row
+        stackRow_hLayout.addWidget(label_stackAmt)
+        stackRow_hLayout.addWidget(self.lineEdit_stackAmt)
+
+        # A 'Make Stacks' button to make each stack by calling 'make_stacks'
+        button_stack = QtWidgets.QPushButton('Make Stacks')
+        button_stack.clicked.connect(self.make_stacks)
+        # Add the buttons / line edits to the middle row
+        self.main_vLayout.addWidget(button_stack)
+
+        # A 'Cancel' button, which calls 'self.close' to close the GUI
+        button_cancel = QtWidgets.QPushButton('Cancel')
+        button_cancel.clicked.connect(self.close)
+        # Add the buttons / line edits to the bottom row
+        self.main_vLayout.addWidget(button_cancel)
+
+        # Configure the window
+        self.setGeometry(300, 300, 250, 450)
+        self.setWindowTitle('Stack Builder')
+        self.show()
 
     def set_selection(self):
         """
@@ -85,6 +152,17 @@ class BuilderGUI(QtWidgets.QDialog):
         Uses the sender to determine which button called it
         Updates the appropriate line edit with the transform of the selection that was set
         """
+        sender = self.sender()
+        if sender:
+            user_selection = cmds.ls(selection=True, tail=1)
+            if len(user_selection) < 1:
+                return
+            if sender.objectName() == 'button1':
+                self.lineEdit1.setText(user_selection[0])
+            if sender.objectName() == 'button2':
+                self.lineEdit2.setText(user_selection[0])
+            if sender.objectName() == 'button3':
+                self.lineEdit3.setText(user_selection[0])
 
     def make_stacks(self):
         """
@@ -98,6 +176,17 @@ class BuilderGUI(QtWidgets.QDialog):
         The first group created will be called 'stack001', the second 'stack002', etc
         Returns True if it completes without an error
         """
+        if self.verify_args() is None:
+            return None
+        transforms = [self.lineEdit1.text(), self.lineEdit2.text(), self.lineEdit3.text()]
+        for index in range(1, int(self.lineEdit_stackAmt.text()) + 1):
+            random.shuffle(transforms)
+            transform_group = cmds.group(em=True, name="stack%s" % ("%03d" % index))
+            for transform in transforms:
+                new_transform = cmds.duplicate(transform)
+                cmds.parent(new_transform, transform_group)
+            td_maya_tools.stacker.stack_objs(transforms[0], transforms[1], transforms[2])
+        return True
 
     def verify_args(self):
         """
@@ -112,6 +201,23 @@ class BuilderGUI(QtWidgets.QDialog):
         If all of the arguments have a value which is valid, it returns True
         :return: None
         """
+        transforms = [self.lineEdit1.text(), self.lineEdit2.text(), self.lineEdit3.text()]
+        for transform in transforms:
+            if transform is None or transform == '':
+                self.warn_user('Warning', "Every transform must contain a valid object")
+                return None
+            if cmds.objExists(transform) is False:
+                self.warn_user('Warning', "Every transform must contain a valid object")
+                return None
+        try:
+            stack_amount = int(self.lineEdit_stackAmt.text())
+            if stack_amount < 1:
+                self.warn_user('Warning', "Must have a valid stack amount")
+                return None
+        except ValueError:
+            self.warn_user('Warning', "Must have a valid stack amount")
+            return None
+        return True
 
     def warn_user(self, title, message):
         """
@@ -124,3 +230,4 @@ class BuilderGUI(QtWidgets.QDialog):
         :param message: A message to display in the window
         :type: String
         """
+        print("%s: %s" % (title, message))
