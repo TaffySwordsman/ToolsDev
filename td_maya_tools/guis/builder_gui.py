@@ -178,14 +178,16 @@ class BuilderGUI(QtWidgets.QDialog):
         """
         if self.verify_args() is None:
             return None
-        transforms = [self.lineEdit1.text(), self.lineEdit2.text(), self.lineEdit3.text()]
+        orig_list = [self.lineEdit1.text(), self.lineEdit2.text(), self.lineEdit3.text()]
         for index in range(1, int(self.lineEdit_stackAmt.text()) + 1):
-            random.shuffle(transforms)
-            transform_group = cmds.group(em=True, name="stack%s" % ("%03d" % index))
-            for transform in transforms:
-                new_transform = cmds.duplicate(transform)
-                cmds.parent(new_transform, transform_group)
-            td_maya_tools.stacker.stack_objs(transforms[0], transforms[1], transforms[2])
+            random.shuffle(orig_list)
+            stack_group = cmds.group(em=True, name="stack%s" % ("%03d" % index))
+            stack_list = []
+            for transform in orig_list:
+                new_transform = cmds.duplicate(transform)[0]
+                cmds.parent(new_transform, stack_group)
+                stack_list.append(new_transform)
+            td_maya_tools.stacker.stack_objs(stack_list[0], stack_list[1], stack_list[2])
         return True
 
     def verify_args(self):
