@@ -69,10 +69,13 @@ class BuilderGUI(QtWidgets.QDialog):
         """
         QtWidgets.QDialog.__init__(self, parent=get_maya_window())
         self.main_vLayout = None
-        self.lineEdit1 = None
-        self.lineEdit2 = None
-        self.lineEdit3 = None
-        self.lineEdit_stackAmt = None
+        self.top_lineEdit = None
+        self.mid_lineEdit = None
+        self.base_lineEdit = None
+        self.stackAmt_lineEdit = None
+        self.top_list = []
+        self.mid_list = []
+        self.base_list = []
 
     def init_gui(self):
         """
@@ -88,21 +91,21 @@ class BuilderGUI(QtWidgets.QDialog):
         self.main_vLayout = QtWidgets.QVBoxLayout(self)
 
         # Create the three row layouts (Horizontal)
-        row1_hLayout = QtWidgets.QHBoxLayout()
-        row2_hLayout = QtWidgets.QHBoxLayout()
-        row3_hLayout = QtWidgets.QHBoxLayout()
+        top_hLayout = QtWidgets.QHBoxLayout()
+        mid_hLayout = QtWidgets.QHBoxLayout()
+        base_hLayout = QtWidgets.QHBoxLayout()
         # Add the row layouts to the main layout
-        self.main_vLayout.addLayout(row1_hLayout)
-        self.main_vLayout.addLayout(row2_hLayout)
-        self.main_vLayout.addLayout(row3_hLayout)
+        self.main_vLayout.addLayout(top_hLayout)
+        self.main_vLayout.addLayout(mid_hLayout)
+        self.main_vLayout.addLayout(base_hLayout)
 
         # Create the buttons and line edits
-        button1 = QtWidgets.QPushButton('Set Selection')
-        button2 = QtWidgets.QPushButton('Set Selection')
-        button3 = QtWidgets.QPushButton('Set Selection')
-        self.lineEdit1 = QtWidgets.QLineEdit()
-        self.lineEdit2 = QtWidgets.QLineEdit()
-        self.lineEdit3 = QtWidgets.QLineEdit()
+        button1 = QtWidgets.QPushButton('Set Top Parts')
+        button2 = QtWidgets.QPushButton('Set Mid Parts')
+        button3 = QtWidgets.QPushButton('Set Base Parts')
+        self.top_lineEdit = QtWidgets.QLineEdit()
+        self.mid_lineEdit = QtWidgets.QLineEdit()
+        self.base_lineEdit = QtWidgets.QLineEdit()
         # Name the buttons
         button1.setObjectName('button1')
         button2.setObjectName('button2')
@@ -112,38 +115,39 @@ class BuilderGUI(QtWidgets.QDialog):
         button2.clicked.connect(self.set_selection)
         button3.clicked.connect(self.set_selection)
         # Add the buttons and line edits to the rows
-        row1_hLayout.addWidget(self.lineEdit1)
-        row1_hLayout.addWidget(button1)
-        row2_hLayout.addWidget(self.lineEdit2)
-        row2_hLayout.addWidget(button2)
-        row3_hLayout.addWidget(self.lineEdit3)
-        row3_hLayout.addWidget(button3)
+        top_hLayout.addWidget(button1)
+        top_hLayout.addWidget(self.top_lineEdit)
+        mid_hLayout.addWidget(button2)
+        mid_hLayout.addWidget(self.mid_lineEdit)
+        base_hLayout.addWidget(button3)
+        base_hLayout.addWidget(self.base_lineEdit)
 
         # A label and a line edit that allows the user to specify how many stacks to make
-        label_stackAmt = QtWidgets.QLabel('Stack Amount')
-        self.lineEdit_stackAmt = QtWidgets.QLineEdit()
+        stackAmt_label = QtWidgets.QLabel('Number of Stacks to Make:')
+        self.stackAmt_lineEdit = QtWidgets.QLineEdit()
         # Create a new row to hold the stack amount control
-        stackRow_hLayout = QtWidgets.QHBoxLayout()
-        self.main_vLayout.addLayout(stackRow_hLayout)
+        stackAmt_hLayout = QtWidgets.QHBoxLayout()
+        self.main_vLayout.addLayout(stackAmt_hLayout)
         # Add the buttons / line edits to the a new row
-        stackRow_hLayout.addWidget(label_stackAmt)
-        stackRow_hLayout.addWidget(self.lineEdit_stackAmt)
+        stackAmt_hLayout.addWidget(stackAmt_label)
+        stackAmt_hLayout.addWidget(self.stackAmt_lineEdit)
 
+        # A horizontal layout to hold the 'Make Stacks' and 'Cancel' buttons
+        buttons_hLayout = QtWidgets.QHBoxLayout()
+        self.main_vLayout.addLayout(buttons_hLayout)
         # A 'Make Stacks' button to make each stack by calling 'make_stacks'
-        button_stack = QtWidgets.QPushButton('Make Stacks')
-        button_stack.clicked.connect(self.make_stacks)
-        # Add the buttons / line edits to the middle row
-        self.main_vLayout.addWidget(button_stack)
-
+        stack_button = QtWidgets.QPushButton('Make Stacks')
+        stack_button.clicked.connect(self.make_stacks)
         # A 'Cancel' button, which calls 'self.close' to close the GUI
-        button_cancel = QtWidgets.QPushButton('Cancel')
-        button_cancel.clicked.connect(self.close)
-        # Add the buttons / line edits to the bottom row
-        self.main_vLayout.addWidget(button_cancel)
+        cancel_button = QtWidgets.QPushButton('Cancel')
+        cancel_button.clicked.connect(self.close)
+        # Add the two buttons to the button row
+        buttons_hLayout.addWidget(stack_button)
+        buttons_hLayout.addWidget(cancel_button)
 
         # Configure the window
-        self.setGeometry(300, 300, 250, 450)
-        self.setWindowTitle('Stack Builder')
+        self.setGeometry(300, 300, 350, 150)
+        self.setWindowTitle('Builder')
         self.show()
 
     def set_selection(self):
@@ -154,15 +158,18 @@ class BuilderGUI(QtWidgets.QDialog):
         """
         sender = self.sender()
         if sender:
-            user_selection = cmds.ls(selection=True, tail=1)
+            user_selection = cmds.ls(selection=True)
             if len(user_selection) < 1:
                 return
             if sender.objectName() == 'button1':
-                self.lineEdit1.setText(user_selection[0])
+                self.top_list = user_selection
+                self.top_lineEdit.setText(', '.join(user_selection))
             if sender.objectName() == 'button2':
-                self.lineEdit2.setText(user_selection[0])
+                self.mid_list = user_selection
+                self.mid_lineEdit.setText(', '.join(user_selection))
             if sender.objectName() == 'button3':
-                self.lineEdit3.setText(user_selection[0])
+                self.base_list = user_selection
+                self.base_lineEdit.setText(', '.join(user_selection))
 
     def make_stacks(self):
         """
@@ -178,16 +185,18 @@ class BuilderGUI(QtWidgets.QDialog):
         """
         if self.verify_args() is None:
             return None
-        orig_list = [self.lineEdit1.text(), self.lineEdit2.text(), self.lineEdit3.text()]
-        for index in range(1, int(self.lineEdit_stackAmt.text()) + 1):
-            random.shuffle(orig_list)
+        for index in range(1, int(self.stackAmt_lineEdit.text()) + 1):
+            random.shuffle(self.top_list)
+            random.shuffle(self.mid_list)
+            random.shuffle(self.base_list)
+            top_transform = cmds.duplicate(self.top_list[0])[0]
+            mid_transform = cmds.duplicate(self.mid_list[0])[0]
+            base_transform = cmds.duplicate(self.base_list[0])[0]
             stack_group = cmds.group(em=True, name="stack%s" % ("%03d" % index))
-            stack_list = []
-            for transform in orig_list:
-                new_transform = cmds.duplicate(transform)[0]
-                cmds.parent(new_transform, stack_group)
-                stack_list.append(new_transform)
-            td_maya_tools.stacker.stack_objs(stack_list[0], stack_list[1], stack_list[2])
+            cmds.parent(top_transform, stack_group)
+            cmds.parent(mid_transform, stack_group)
+            cmds.parent(base_transform, stack_group)
+            td_maya_tools.stacker.stack_objs(top_transform, mid_transform, base_transform)
         return True
 
     def verify_args(self):
@@ -203,16 +212,17 @@ class BuilderGUI(QtWidgets.QDialog):
         If all of the arguments have a value which is valid, it returns True
         :return: None
         """
-        transforms = [self.lineEdit1.text(), self.lineEdit2.text(), self.lineEdit3.text()]
-        for transform in transforms:
-            if transform is None or transform == '':
-                self.warn_user('Warning', "Every transform must contain a valid object")
+        collection_list = [self.top_list, self.mid_list, self.base_list]
+        for transform_list in collection_list:
+            if len(transform_list) < 1:
+                self.warn_user('Warning', "Must have a Top, Mid, and Base transform")
                 return None
-            if cmds.objExists(transform) is False:
-                self.warn_user('Warning', "Every transform must contain a valid object")
-                return None
+            for transform in transform_list:
+                if cmds.objExists(transform) is False:
+                    self.warn_user('Warning', "Every transform must be valid")
+                    return None
         try:
-            stack_amount = int(self.lineEdit_stackAmt.text())
+            stack_amount = int(self.stackAmt_lineEdit.text())
             if stack_amount < 1:
                 self.warn_user('Warning', "Must have a valid stack amount")
                 return None
