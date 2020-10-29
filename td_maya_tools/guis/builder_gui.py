@@ -64,8 +64,9 @@ def get_maya_window():
 class BuilderGUI(QtWidgets.QDialog):
     def __init__(self):
         """
-        Accepts no arguments
         Declares all the variables that will be necessary for the GUI to function
+
+        :return: N/A
         """
         QtWidgets.QDialog.__init__(self, parent=get_maya_window())
         self.main_vLayout = None
@@ -76,13 +77,10 @@ class BuilderGUI(QtWidgets.QDialog):
 
     def init_gui(self):
         """
-        Accepts no arguments
-        Adds three rows of buttons and line edits which will eventually display group info
-            These buttons all connect to 'set_selection'
-        A label and a line edit that allows the user to specify how many stacks to make
-        A 'Make Stacks' button to make each stack by calling 'make_stacks'
-        A 'Cancel' button, which calls 'self.close' to close the GUI
-            (you don't need to write 'self.close', every GUI has it)
+        Builds GUI window with the ability to set selected objects, modify text boxes,
+        set the number of stacks, and create stacks.
+
+        :return: N/A
         """
         # Create the main layout (Vertical)
         self.main_vLayout = QtWidgets.QVBoxLayout(self)
@@ -149,9 +147,9 @@ class BuilderGUI(QtWidgets.QDialog):
 
     def set_selection(self):
         """
-        Accepts no arguments
-        Uses the sender to determine which button called it
         Updates the appropriate line edit with the transform of the selection that was set
+
+        :return: N/A
         """
         sender = self.sender()
         if sender:
@@ -167,15 +165,9 @@ class BuilderGUI(QtWidgets.QDialog):
 
     def make_stacks(self):
         """
-        Accepts no arguments
-        Calls 'verify_args' to make sure the user has entered all necessary information
-            If a None value is returned from 'verify_args', return None
-        Uses a for loop to create the stacks
-            Uses the 'random' Python library to pick a base, middle, and top object
-            Duplicates them and uses commands from the 'stacker' module to create a stack
-            Groups the pieces of the stack
-        The first group created will be called 'stack001', the second 'stack002', etc
-        Returns True if it completes without an error
+        Verifies user input and creates stacks of objects
+
+        :return: True if it completes without an error
         """
         # Return none if verification fails
         if self.verify_args() is None:
@@ -212,16 +204,9 @@ class BuilderGUI(QtWidgets.QDialog):
 
     def verify_args(self):
         """
-        Accepts no arguments
         Checks the GUI to make sure it has all the information it needs
-        If any of the arguments do not have a value:
-            It calls 'warn_user' with an appropriate message
-        It returns None
-        Checks to make sure the user entered an integer for the number of stacks to make
-            It calls 'warn_user' with an appropriate message
-        It returns None
-        If all of the arguments have a value which is valid, it returns True
-        :return: None
+
+        :return: None if verification fails, else True
         """
         top_list = []
         mid_list = []
@@ -287,14 +272,15 @@ class BuilderGUI(QtWidgets.QDialog):
     # noinspection PyMethodMayBeStatic
     def warn_user(self, title, message):
         """
-        Accepts two arguments, a title and a message
         Displays a message box that locks the program till the user acknowledges it
-        Use the code covered in the videos for this
 
         :param title: A title for the window
         :type: String
+
         :param message: A message to display in the window
         :type: String
+
+        :return: N/A
         """
         # Create warning dialog
         cmds.confirmDialog(title=title,
