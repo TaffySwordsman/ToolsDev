@@ -4,3 +4,5 @@
 template.py
 
 template_example.py
+
+*.pyc

@@ -212,15 +212,35 @@ class BuilderGUI(QtWidgets.QDialog):
         If all of the arguments have a value which is valid, it returns True
         :return: None
         """
+        print('Verifying')
         collection_list = [self.top_list, self.mid_list, self.base_list]
+        index = -1
+        # Parse through all sets of objects
         for transform_list in collection_list:
+            index += 1
             if len(transform_list) < 1:
-                self.warn_user('Warning', "Must have a Top, Mid, and Base transform")
-                return None
-            for transform in transform_list:
-                if cmds.objExists(transform) is False:
-                    self.warn_user('Warning', "Every transform must be valid")
-                    return None
+                print(index)
+                # Warn user if there are no top parts selected
+                if index == 0:
+                    self.warn_user('Builder - Selection',
+                                   "You must set a selection for the top parts.")
+
+                # Warn user if there are no mid parts selected
+                if index == 1:
+                    self.warn_user('Builder - Selection',
+                                   "You must set a selection for the mid parts.")
+
+                # Warn user if there are no base parts selected
+                if index == 2:
+                    self.warn_user('Builder - Selection',
+                                   "You must set a selection for the base parts.")
+
+            # for transform in transform_list:
+            #     if cmds.objExists(transform) is False:
+            #         self.warn_user('Builder - Selection',
+            #                        "Every transform must be valid")
+            #         return None
+
         try:
             stack_amount = int(self.stackAmt_lineEdit.text())
             if stack_amount < 1:
@@ -242,4 +262,6 @@ class BuilderGUI(QtWidgets.QDialog):
         :param message: A message to display in the window
         :type: String
         """
-        print("%s: %s" % (title, message))
+        cmds.confirmDialog(title=title,
+                           message=message,
+                           button='OK')
