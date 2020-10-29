@@ -35,10 +35,10 @@
 #----------------------------------------------------------------------------- IMPORTS --#
 
 # Default Python Imports
-from PySide2 import QtGui, QtWidgets
-from maya import OpenMayaUI as omui
-from shiboken2 import wrapInstance
 import maya.cmds as cmds
+from maya import OpenMayaUI as omui
+from PySide2 import QtGui, QtWidgets
+from shiboken2 import wrapInstance
 import random
 
 # Imports That You Wrote
@@ -73,9 +73,6 @@ class BuilderGUI(QtWidgets.QDialog):
         self.mid_lineEdit = None
         self.base_lineEdit = None
         self.stackAmt_lineEdit = None
-        self.top_list = []
-        self.mid_list = []
-        self.base_list = []
 
     def init_gui(self):
         """
@@ -162,13 +159,10 @@ class BuilderGUI(QtWidgets.QDialog):
             if len(user_selection) < 1:
                 return
             if sender.objectName() == 'button1':
-                self.top_list = user_selection
                 self.top_lineEdit.setText(', '.join(user_selection))
             if sender.objectName() == 'button2':
-                self.mid_list = user_selection
                 self.mid_lineEdit.setText(', '.join(user_selection))
             if sender.objectName() == 'button3':
-                self.base_list = user_selection
                 self.base_lineEdit.setText(', '.join(user_selection))
 
     def make_stacks(self):
@@ -183,20 +177,37 @@ class BuilderGUI(QtWidgets.QDialog):
         The first group created will be called 'stack001', the second 'stack002', etc
         Returns True if it completes without an error
         """
+        # Return none if verification fails
         if self.verify_args() is None:
             return None
+
+        # Create lists of object transforms from text boxes
+        top_list = self.top_lineEdit.text().split(", ")
+        mid_list = self.mid_lineEdit.text().split(", ")
+        base_list = self.base_lineEdit.text().split(", ")
+
+        # Create specified number of stacks
         for index in range(1, int(self.stackAmt_lineEdit.text()) + 1):
-            random.shuffle(self.top_list)
-            random.shuffle(self.mid_list)
-            random.shuffle(self.base_list)
-            top_transform = cmds.duplicate(self.top_list[0])[0]
-            mid_transform = cmds.duplicate(self.mid_list[0])[0]
-            base_transform = cmds.duplicate(self.base_list[0])[0]
+            # Randomize top, middle, and base objects
+            random.shuffle(top_list)
+            random.shuffle(mid_list)
+            random.shuffle(base_list)
+
+            # Duplicate objects and move base to world origin
+            top_transform = cmds.duplicate(top_list[0])[0]
+            mid_transform = cmds.duplicate(mid_list[0])[0]
+            base_transform = cmds.duplicate(base_list[0])[0]
+            cmds.move(0, 0, 0, base_transform, absolute=True)
+
+            # Stack objects
+            td_maya_tools.stacker.stack_objs(base_transform, mid_transform, top_transform)
+
+            # Create group and place stacked objects in it
             stack_group = cmds.group(em=True, name="stack%s" % ("%03d" % index))
             cmds.parent(top_transform, stack_group)
             cmds.parent(mid_transform, stack_group)
             cmds.parent(base_transform, stack_group)
-            td_maya_tools.stacker.stack_objs(top_transform, mid_transform, base_transform)
+
         return True
 
     def verify_args(self):
@@ -212,45 +223,68 @@ class BuilderGUI(QtWidgets.QDialog):
         If all of the arguments have a value which is valid, it returns True
         :return: None
         """
-        print('Verifying')
-        collection_list = [self.top_list, self.mid_list, self.base_list]
-        index = -1
-        # Parse through all sets of objects
-        for transform_list in collection_list:
-            index += 1
-            if len(transform_list) < 1:
-                print(index)
-                # Warn user if there are no top parts selected
-                if index == 0:
-                    self.warn_user('Builder - Selection',
-                                   "You must set a selection for the top parts.")
+        top_list = []
+        mid_list = []
+        base_list = []
+        error = ""
 
-                # Warn user if there are no mid parts selected
-                if index == 1:
-                    self.warn_user('Builder - Selection',
-                                   "You must set a selection for the mid parts.")
+        # Create lists of object names if text box is not empty
+        if len(self.top_lineEdit.text()) > 0:
+            top_list = self.top_lineEdit.text().split(", ")
+        if len(self.mid_lineEdit.text()) > 0:
+            mid_list = self.mid_lineEdit.text().split(", ")
+        if len(self.base_lineEdit.text()) > 0:
+            base_list = self.base_lineEdit.text().split(", ")
 
-                # Warn user if there are no base parts selected
-                if index == 2:
-                    self.warn_user('Builder - Selection',
-                                   "You must set a selection for the base parts.")
+        # Verify number and validity of top objects
+        if len(top_list) < 1:
+            error += "You must set a selection for the top parts.\n"
+        else:
+            for transform in top_list:
+                if cmds.objExists(transform) is False:
+                    error += "Top Stack transforms are invalid\n"
 
-            # for transform in transform_list:
-            #     if cmds.objExists(transform) is False:
-            #         self.warn_user('Builder - Selection',
-            #                        "Every transform must be valid")
-            #         return None
+        # Verify number and validity of middle objects
+        if len(mid_list) < 1:
+            error += "You must set a selection for the mid parts.\n"
+        else:
+            for transform in mid_list:
+                if cmds.objExists(transform) is False:
+                    error += "Mid Stack transforms are invalid\n"
 
+        # Verify number and validity of base objects
+        if len(base_list) < 1:
+            error += "You must set a selection for the base parts.\n"
+        else:
+            for transform in base_list:
+                if cmds.objExists(transform) is False:
+                    error += "Base Stack transforms are invalid\n"
+
+        # Warn user if selection errors exist
+        if error != "":
+            self.warn_user('Builder - Selection', error)
+            return None
+
+        # Verify minimum stack number is met
         try:
             stack_amount = int(self.stackAmt_lineEdit.text())
             if stack_amount < 1:
-                self.warn_user('Warning', "Must have a valid stack amount")
-                return None
+                error += "Must have at least 1 stack\n"
+        # Verify that stack input is an integer
         except ValueError:
-            self.warn_user('Warning', "Must have a valid stack amount")
+            if self.stackAmt_lineEdit.text() is None:
+                error += "You must specify the number of buildings to make"
+            else:
+                error += "The value for the number of buildings must be an integer\n"
+
+        # Warn user if count errors exist
+        if error != "":
+            self.warn_user('Builder - Count', error)
             return None
+
         return True
 
+    # noinspection PyMethodMayBeStatic
     def warn_user(self, title, message):
         """
         Accepts two arguments, a title and a message
@@ -262,6 +296,8 @@ class BuilderGUI(QtWidgets.QDialog):
         :param message: A message to display in the window
         :type: String
         """
+        # Create warning dialog
         cmds.confirmDialog(title=title,
                            message=message,
-                           button='OK')
+                           button='OK',
+                           icon="warning")
