@@ -215,16 +215,19 @@ class BuilderGUI(QtWidgets.QDialog):
         error = ""
         if len(self.top_list) < 1:
             error += "Must have a valid top stack\n"
+        else:
             for transform in self.top_list:
                 if cmds.objExists(transform) is False:
                     error += "Top Stack transforms are invalid\n"
         if len(self.mid_list) < 1:
             error += "Must have a valid mid stack\n"
+        else:
             for transform in self.mid_list:
                 if cmds.objExists(transform) is False:
                     error += "Mid Stack transforms are invalid\n"
         if len(self.base_list) < 1:
             error += "Must have a valid base stack\n"
+        else:
             for transform in self.base_list:
                 if cmds.objExists(transform) is False:
                     error += "Base Stack transforms are invalid\n"
