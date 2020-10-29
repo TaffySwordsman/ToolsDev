@@ -212,22 +212,30 @@ class BuilderGUI(QtWidgets.QDialog):
         If all of the arguments have a value which is valid, it returns True
         :return: None
         """
-        collection_list = [self.top_list, self.mid_list, self.base_list]
-        for transform_list in collection_list:
-            if len(transform_list) < 1:
-                self.warn_user('Warning', "Must have a Top, Mid, and Base transform")
-                return None
-            for transform in transform_list:
+        error = ""
+        if len(self.top_list) < 1:
+            error += "Must have a valid top stack\n"
+            for transform in self.top_list:
                 if cmds.objExists(transform) is False:
-                    self.warn_user('Warning', "Every transform must be valid")
-                    return None
+                    error += "Top Stack transforms are invalid\n"
+        if len(self.mid_list) < 1:
+            error += "Must have a valid mid stack\n"
+            for transform in self.mid_list:
+                if cmds.objExists(transform) is False:
+                    error += "Mid Stack transforms are invalid\n"
+        if len(self.base_list) < 1:
+            error += "Must have a valid base stack\n"
+            for transform in self.base_list:
+                if cmds.objExists(transform) is False:
+                    error += "Base Stack transforms are invalid\n"
         try:
             stack_amount = int(self.stackAmt_lineEdit.text())
             if stack_amount < 1:
-                self.warn_user('Warning', "Must have a valid stack amount")
                 return None
         except ValueError:
-            self.warn_user('Warning', "Must have a valid stack amount")
+            error += "Must have a valid stack amount\n"
+        if error != "":
+            self.warn_user('Warning', error)
             return None
         return True
 
@@ -242,4 +250,6 @@ class BuilderGUI(QtWidgets.QDialog):
         :param message: A message to display in the window
         :type: String
         """
-        print("%s: %s" % (title, message))
+        cmds.confirmDialog(title=title,
+                           message=message,
+                           button='OK')
