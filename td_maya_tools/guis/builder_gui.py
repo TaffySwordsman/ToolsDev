@@ -35,14 +35,14 @@
 #----------------------------------------------------------------------------- IMPORTS --#
 
 # Default Python Imports
-from PySide2 import QtGui, QtWidgets
-from maya import OpenMayaUI as omui
-from shiboken2 import wrapInstance
 import maya.cmds as cmds
+from maya import OpenMayaUI as omui
+from PySide2 import QtGui, QtWidgets
+from shiboken2 import wrapInstance
 import random
 
 # Imports That You Wrote
-import td_maya_tools.stacker
+import td_maya_tools.stacker as stacker
 
 #----------------------------------------------------------------------------------------#
 #--------------------------------------------------------------------------- FUNCTIONS --#
@@ -64,8 +64,9 @@ def get_maya_window():
 class BuilderGUI(QtWidgets.QDialog):
     def __init__(self):
         """
-        Accepts no arguments
         Declares all the variables that will be necessary for the GUI to function
+
+        :return: N/A
         """
         QtWidgets.QDialog.__init__(self, parent=get_maya_window())
         self.main_vLayout = None
@@ -73,19 +74,13 @@ class BuilderGUI(QtWidgets.QDialog):
         self.mid_lineEdit = None
         self.base_lineEdit = None
         self.stackAmt_lineEdit = None
-        self.top_list = []
-        self.mid_list = []
-        self.base_list = []
 
     def init_gui(self):
         """
-        Accepts no arguments
-        Adds three rows of buttons and line edits which will eventually display group info
-            These buttons all connect to 'set_selection'
-        A label and a line edit that allows the user to specify how many stacks to make
-        A 'Make Stacks' button to make each stack by calling 'make_stacks'
-        A 'Cancel' button, which calls 'self.close' to close the GUI
-            (you don't need to write 'self.close', every GUI has it)
+        Builds GUI window with the ability to set selected objects, modify text boxes,
+        set the number of stacks, and create stacks.
+
+        :return: N/A
         """
         # Create the main layout (Vertical)
         self.main_vLayout = QtWidgets.QVBoxLayout(self)
@@ -152,9 +147,9 @@ class BuilderGUI(QtWidgets.QDialog):
 
     def set_selection(self):
         """
-        Accepts no arguments
-        Uses the sender to determine which button called it
         Updates the appropriate line edit with the transform of the selection that was set
+
+        :return: N/A
         """
         sender = self.sender()
         if sender:
@@ -162,97 +157,139 @@ class BuilderGUI(QtWidgets.QDialog):
             if len(user_selection) < 1:
                 return
             if sender.objectName() == 'button1':
-                self.top_list = user_selection
                 self.top_lineEdit.setText(', '.join(user_selection))
             if sender.objectName() == 'button2':
-                self.mid_list = user_selection
                 self.mid_lineEdit.setText(', '.join(user_selection))
             if sender.objectName() == 'button3':
-                self.base_list = user_selection
                 self.base_lineEdit.setText(', '.join(user_selection))
 
     def make_stacks(self):
         """
-        Accepts no arguments
-        Calls 'verify_args' to make sure the user has entered all necessary information
-            If a None value is returned from 'verify_args', return None
-        Uses a for loop to create the stacks
-            Uses the 'random' Python library to pick a base, middle, and top object
-            Duplicates them and uses commands from the 'stacker' module to create a stack
-            Groups the pieces of the stack
-        The first group created will be called 'stack001', the second 'stack002', etc
-        Returns True if it completes without an error
+        Verifies user input and creates stacks of objects
+
+        :return: True if it completes without an error
         """
+        # Return none if verification fails
         if self.verify_args() is None:
             return None
-        for index in range(1, int(self.stackAmt_lineEdit.text()) + 1):
-            random.shuffle(self.top_list)
-            random.shuffle(self.mid_list)
-            random.shuffle(self.base_list)
-            top_transform = cmds.duplicate(self.top_list[0])[0]
-            mid_transform = cmds.duplicate(self.mid_list[0])[0]
-            base_transform = cmds.duplicate(self.base_list[0])[0]
-            stack_group = cmds.group(em=True, name="stack%s" % ("%03d" % index))
-            cmds.parent(top_transform, stack_group)
-            cmds.parent(mid_transform, stack_group)
-            cmds.parent(base_transform, stack_group)
-            td_maya_tools.stacker.stack_objs(top_transform, mid_transform, base_transform)
+
+        # Create lists of object transforms from text boxes
+        top_list = self.top_lineEdit.text().split(", ")
+        mid_list = self.mid_lineEdit.text().split(", ")
+        base_list = self.base_lineEdit.text().split(", ")
+
+        try:
+            # Create specified number of stacks
+            for index in range(1, int(self.stackAmt_lineEdit.text()) + 1):
+                # Randomize top, middle, and base objects
+                random.shuffle(top_list)
+                random.shuffle(mid_list)
+                random.shuffle(base_list)
+
+                # Duplicate objects and move base to world origin
+                base_transform = cmds.duplicate(base_list[0])[0]
+                mid_transform = cmds.duplicate(mid_list[0])[0]
+                top_transform = cmds.duplicate(top_list[0])[0]
+
+                # Center the base object to the world origin
+                cmds.move(0, 0, 0, base_transform, absolute=True)
+
+                # Stack objects
+                stacker.stack_objs(base_transform, mid_transform, top_transform)
+
+                # Create and empty group and parent the stacked objects to it
+                stack_group = cmds.group(em=True, name="stack%s" % ("%03d" % index))
+                cmds.parent(base_transform, stack_group)
+                cmds.parent(mid_transform, stack_group)
+                cmds.parent(top_transform, stack_group)
+        except RuntimeError:
+            # Return false if an error occurs
+            return None
+
         return True
 
     def verify_args(self):
         """
-        Accepts no arguments
         Checks the GUI to make sure it has all the information it needs
-        If any of the arguments do not have a value:
-            It calls 'warn_user' with an appropriate message
-        It returns None
-        Checks to make sure the user entered an integer for the number of stacks to make
-            It calls 'warn_user' with an appropriate message
-        It returns None
-        If all of the arguments have a value which is valid, it returns True
-        :return: None
+
+        :return: None if verification fails, else True
         """
+        top_list = []
+        mid_list = []
+        base_list = []
         error = ""
-        if len(self.top_list) < 1:
-            error += "Must have a valid top stack\n"
+
+        # Create lists of object names if text box is not empty
+        if len(self.top_lineEdit.text()) > 0:
+            top_list = self.top_lineEdit.text().split(", ")
+        if len(self.mid_lineEdit.text()) > 0:
+            mid_list = self.mid_lineEdit.text().split(", ")
+        if len(self.base_lineEdit.text()) > 0:
+            base_list = self.base_lineEdit.text().split(", ")
+
+        # Verify number and validity of top objects
+        if len(top_list) < 1:
+            error += "You must set a selection for the top parts.\n"
         else:
-            for transform in self.top_list:
+            for transform in top_list:
                 if cmds.objExists(transform) is False:
                     error += "Top Stack transforms are invalid\n"
-        if len(self.mid_list) < 1:
-            error += "Must have a valid mid stack\n"
+
+        # Verify number and validity of middle objects
+        if len(mid_list) < 1:
+            error += "You must set a selection for the mid parts.\n"
         else:
-            for transform in self.mid_list:
+            for transform in mid_list:
                 if cmds.objExists(transform) is False:
                     error += "Mid Stack transforms are invalid\n"
-        if len(self.base_list) < 1:
-            error += "Must have a valid base stack\n"
+
+        # Verify number and validity of base objects
+        if len(base_list) < 1:
+            error += "You must set a selection for the base parts.\n"
         else:
-            for transform in self.base_list:
+            for transform in base_list:
                 if cmds.objExists(transform) is False:
                     error += "Base Stack transforms are invalid\n"
+
+        # Warn user if selection errors exist
+        if error != "":
+            self.warn_user('Builder - Selection', error)
+            return None
+
+        # Verify minimum stack number is met
         try:
             stack_amount = int(self.stackAmt_lineEdit.text())
             if stack_amount < 1:
-                return None
+                error += "Must have at least 1 stack\n"
+        # Verify that stack input is an integer
         except ValueError:
-            error += "Must have a valid stack amount\n"
+            if self.stackAmt_lineEdit.text() is None:
+                error += "You must specify the number of buildings to make"
+            else:
+                error += "The value for the number of buildings must be an integer\n"
+
+        # Warn user if count errors exist
         if error != "":
-            self.warn_user('Warning', error)
+            self.warn_user('Builder - Count', error)
             return None
+
         return True
 
+    # noinspection PyMethodMayBeStatic
     def warn_user(self, title, message):
         """
-        Accepts two arguments, a title and a message
         Displays a message box that locks the program till the user acknowledges it
-        Use the code covered in the videos for this
 
         :param title: A title for the window
         :type: String
+
         :param message: A message to display in the window
         :type: String
+
+        :return: N/A
         """
+        # Create warning dialog
         cmds.confirmDialog(title=title,
                            message=message,
-                           button='OK')
+                           button='OK',
+                           icon="warning")
