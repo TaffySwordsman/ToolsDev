@@ -104,6 +104,7 @@ def stack_objs(objects):
     # Return True
     return True
 
+
 def create_stack(obj_name, transform_from, transform_to):
     """
     This function calculates relative distance between two points and moves the object

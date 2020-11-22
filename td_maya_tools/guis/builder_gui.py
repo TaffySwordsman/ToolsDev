@@ -42,7 +42,8 @@ from shiboken2 import wrapInstance
 import random
 
 # Imports That You Wrote
-import td_maya_tools.stacker as stacker
+from td_maya_tools import stacker
+from td_maya_tools import gen_utils
 
 #----------------------------------------------------------------------------------------#
 #--------------------------------------------------------------------------- FUNCTIONS --#
@@ -70,49 +71,29 @@ class BuilderGUI(QtWidgets.QDialog):
         """
         QtWidgets.QDialog.__init__(self, parent=get_maya_window())
         self.main_vLayout = None
-        self.optLayout = None
         self.top_lineEdit = None
         self.mid_lineEdit = None
         self.base_lineEdit = None
-        self.stack_lineEdit = None
-        self.height_lineEdit = None
-        self.offset_lineEdit = None
-        
+        self.stackAmt_lineEdit = None
+
     def init_gui(self):
         """
         Builds GUI window with the ability to set selected objects, modify text boxes,
         set the number of stacks, and create stacks.
 
-        Calls make_options_layout to get the options layout portion of the GUI.
-        Adds a tree view widget that tracks the stack groups that are added.
-            The tree view entries are set-up such that the name of the transforms nodes
-            are under the group name.
-            Clicking on something in the tree view calls tree_item_clicked
-
         :return: N/A
         """
-
         # Create the main layout (Vertical)
-        #self.main_vLayout = QtWidgets.QVBoxLayout(self)
+        self.main_vLayout = QtWidgets.QVBoxLayout(self)
 
-        # Create the QFormLayout
-        self.optLayout = QtWidgets.QFormLayout(self)
-
-        # Create the row layouts
+        # Create the three row layouts (Horizontal)
         top_hLayout = QtWidgets.QHBoxLayout()
         mid_hLayout = QtWidgets.QHBoxLayout()
         base_hLayout = QtWidgets.QHBoxLayout()
-        stack_hLayout = QtWidgets.QHBoxLayout()
-        height_hLayout = QtWidgets.QHBoxLayout()
-        offset_hLayout = QtWidgets.QHBoxLayout()
-
         # Add the row layouts to the main layout
-        self.optLayout.addRow(top_hLayout)
-        self.optLayout.addRow(mid_hLayout)
-        self.optLayout.addRow(base_hLayout)
-        self.optLayout.addRow(stack_hLayout)
-        self.optLayout.addRow(height_hLayout)
-        self.optLayout.addRow(offset_hLayout)
+        self.main_vLayout.addLayout(top_hLayout)
+        self.main_vLayout.addLayout(mid_hLayout)
+        self.main_vLayout.addLayout(base_hLayout)
 
         # Create the buttons and line edits
         button1 = QtWidgets.QPushButton('Set Top Parts')
@@ -138,56 +119,25 @@ class BuilderGUI(QtWidgets.QDialog):
         base_hLayout.addWidget(self.base_lineEdit)
 
         # A label and a line edit that allows the user to specify how many stacks to make
-        stack_label = QtWidgets.QLabel('Set Stack Count')
-        self.stack_lineEdit = QtWidgets.QLineEdit()
+        stackAmt_label = QtWidgets.QLabel('Number of Stacks to Make:')
+        self.stackAmt_lineEdit = QtWidgets.QLineEdit()
         # Create a new row to hold the stack amount control
-
-
+        stackAmt_hLayout = QtWidgets.QHBoxLayout()
+        self.main_vLayout.addLayout(stackAmt_hLayout)
         # Add the buttons / line edits to the a new row
-        stack_hLayout.addWidget(stack_label)
-        stack_hLayout.addWidget(self.stack_lineEdit)
+        stackAmt_hLayout.addWidget(stackAmt_label)
+        stackAmt_hLayout.addWidget(self.stackAmt_lineEdit)
 
-        # A label and a line edit that allows the user to specify the max height
-        height_label = QtWidgets.QLabel('Set Max Height')
-        self.height_lineEdit = QtWidgets.QLineEdit()
-        # Create a new row to hold the height amount control
-
-
-        # Add the buttons / line edits to the a new row
-        height_hLayout.addWidget(height_label)
-        height_hLayout.addWidget(self.height_lineEdit)
-
-        # A label and a line edit that allows the user to specify the separation
-        offset_label = QtWidgets.QLabel('Set Separation')
-        self.offset_lineEdit = QtWidgets.QLineEdit()
-        # Create a new row to hold the stack amount control
-
-
-        # Add the buttons / line edits to the a new row
-        offset_hLayout.addWidget(offset_label)
-        offset_hLayout.addWidget(self.offset_lineEdit)
-
-        # A horizontal layout to hold the 'Load XML', 'Make Stacks', and 'Cancel' buttons
+        # A horizontal layout to hold the 'Make Stacks' and 'Cancel' buttons
         buttons_hLayout = QtWidgets.QHBoxLayout()
-        self.optLayout.addRow(buttons_hLayout)
-
-        # A 'Load XML' button to load the XML file by calling 'apply_xml'
-        xml_button = QtWidgets.QPushButton('Load XML')
-        xml_button.setStyleSheet("background-color: orange")
-        xml_button.clicked.connect(self.make_stacks)
-
+        self.main_vLayout.addLayout(buttons_hLayout)
         # A 'Make Stacks' button to make each stack by calling 'make_stacks'
         stack_button = QtWidgets.QPushButton('Make Stacks')
-        stack_button.setStyleSheet("background-color: green")
         stack_button.clicked.connect(self.make_stacks)
-
         # A 'Cancel' button, which calls 'self.close' to close the GUI
         cancel_button = QtWidgets.QPushButton('Cancel')
-        cancel_button.setStyleSheet("background-color: IndianRed")
         cancel_button.clicked.connect(self.close)
-
-        # Add the buttons to the button row
-        buttons_hLayout.addWidget(xml_button)
+        # Add the two buttons to the button row
         buttons_hLayout.addWidget(stack_button)
         buttons_hLayout.addWidget(cancel_button)
 
@@ -198,120 +148,15 @@ class BuilderGUI(QtWidgets.QDialog):
 
     def make_options_layout(self):
         """
-        Uses a QFormLayout to place the different widgets, which will include:
-        Three buttons that set the selection for the top, middle, and bottom parts.
-        Three un-editable line edits that acknowledge that top, middle, and bottom parts
-        have been set.
-            They do this by showing the number of items and coloring the background a
-            green color.
-        Three labels that indicate the stack count, max, height, and separation values.
-        A QSpinBox that allows the user to enter a count, with a default value of 3.
-        A QSpinBox that allows the user to enter a max height from 1 to 6, with a default
-        of 3.
-        A QDoubleSpinBox that allows the user to set a separation value in .1 increments,
-        default value of .1
+        Builds GUI window with the ability to set selected objects, modify text boxes,
+        set the number of stacks, and create stacks.
 
         :return: QFormLayout
         """
 
-        # Create the QFormLayout
-        self.optLayout = QtWidgets.QVBoxLayout(self)
-
-        # Create the three row layouts (Horizontal)
-        top_hLayout = QtWidgets.QHBoxLayout()
-        mid_hLayout = QtWidgets.QHBoxLayout()
-        base_hLayout = QtWidgets.QHBoxLayout()
-        # Add the row layouts to the main layout
-        self.optLayout.addLayout(top_hLayout)
-        self.optLayout.addLayout(mid_hLayout)
-        self.optLayout.addLayout(base_hLayout)
-
-        # Create the buttons and line edits
-        button1 = QtWidgets.QPushButton('Set Top Parts')
-        button2 = QtWidgets.QPushButton('Set Mid Parts')
-        button3 = QtWidgets.QPushButton('Set Base Parts')
-        self.top_lineEdit = QtWidgets.QLineEdit()
-        self.mid_lineEdit = QtWidgets.QLineEdit()
-        self.base_lineEdit = QtWidgets.QLineEdit()
-        # Name the buttons
-        button1.setObjectName('button1')
-        button2.setObjectName('button2')
-        button3.setObjectName('button3')
-        # Connect the buttons to 'Set Selection'
-        button1.clicked.connect(self.set_selection)
-        button2.clicked.connect(self.set_selection)
-        button3.clicked.connect(self.set_selection)
-        # Add the buttons and line edits to the rows
-        top_hLayout.addWidget(button1)
-        top_hLayout.addWidget(self.top_lineEdit)
-        mid_hLayout.addWidget(button2)
-        mid_hLayout.addWidget(self.mid_lineEdit)
-        base_hLayout.addWidget(button3)
-        base_hLayout.addWidget(self.base_lineEdit)
-
-        # A label and a line edit that allows the user to specify how many stacks to make
-        stack_label = QtWidgets.QLabel('Set Stack Count')
-        self.stack_lineEdit = QtWidgets.QLineEdit()
-        # Create a new row to hold the stack amount control
-        stack_hLayout = QtWidgets.QHBoxLayout()
-        self.optLayout.addLayout(stack_hLayout)
-        # Add the buttons / line edits to the a new row
-        stack_hLayout.addWidget(stack_label)
-        stack_hLayout.addWidget(self.stack_lineEdit)
-
-        # A label and a line edit that allows the user to specify the max height
-        height_label = QtWidgets.QLabel('Set Max Height')
-        self.height_lineEdit = QtWidgets.QLineEdit()
-        # Create a new row to hold the height amount control
-        height_hLayout = QtWidgets.QHBoxLayout()
-        self.optLayout.addLayout(height_hLayout)
-        # Add the buttons / line edits to the a new row
-        height_hLayout.addWidget(height_label)
-        height_hLayout.addWidget(self.height_lineEdit)
-
-        # A label and a line edit that allows the user to specify the separation
-        offset_label = QtWidgets.QLabel('Set Separation')
-        self.offset_lineEdit = QtWidgets.QLineEdit()
-        # Create a new row to hold the stack amount control
-        offset_hLayout = QtWidgets.QHBoxLayout()
-        self.optLayout.addLayout(offset_hLayout)
-        # Add the buttons / line edits to the a new row
-        offset_hLayout.addWidget(offset_label)
-        offset_hLayout.addWidget(self.offset_lineEdit)
-
-        # A horizontal layout to hold the 'Load XML', 'Make Stacks', and 'Cancel' buttons
-        buttons_hLayout = QtWidgets.QHBoxLayout()
-        self.optLayout.addLayout(buttons_hLayout)
-
-        # A 'Load XML' button to load the XML file by calling 'apply_xml'
-        xml_button = QtWidgets.QPushButton('Load XML')
-        xml_button.setStyleSheet("background-color: orange")
-        xml_button.clicked.connect(self.make_stacks)
-
-        # A 'Make Stacks' button to make each stack by calling 'make_stacks'
-        stack_button = QtWidgets.QPushButton('Make Stacks')
-        stack_button.setStyleSheet("background-color: green")
-        stack_button.clicked.connect(self.make_stacks)
-
-        # A 'Cancel' button, which calls 'self.close' to close the GUI
-        cancel_button = QtWidgets.QPushButton('Cancel')
-        cancel_button.setStyleSheet("background-color: IndianRed")
-        cancel_button.clicked.connect(self.close)
-
-        # Add the buttons to the button row
-        buttons_hLayout.addWidget(xml_button)
-        buttons_hLayout.addWidget(stack_button)
-        buttons_hLayout.addWidget(cancel_button)
-
-        return self.optLayout
-
     def set_selection(self):
         """
-        Updates the appropriate line edit with the count of objects in the set selection
-
-        Updated to show a count of objects instead of names.
-        Updated to show a green color in the background once the user sets a valid
-        selection.
+        Updates the appropriate line edit with the transform of the selection that was set
 
         :return: N/A
         """
@@ -331,34 +176,6 @@ class BuilderGUI(QtWidgets.QDialog):
         """
         Verifies user input and creates stacks of objects
 
-        Calls 'verify_args' to make sure the user has entered all the information it will
-        need.
-                If a None value is returned from 'verify_args', then this method
-                immediately returns a None value too.
-            Uses a for loop to create the stacks, based on the value of the count spin box
-                Uses the 'random' Python library to pick a base object and duplicates it.
-                Adds a nested for loop to decide how many random mid objects to add, based
-                on the height spin box.
-                    Uses random for each mid object so they can be different.
-                    Duplicates all the objects it needs.
-                Uses random to pick a top object and duplicates it.
-                The duplicated objects are used to make a stack using logic from the
-                stacker module.
-                Groups the pieces of the stack, with the base object sitting on the grid,
-                and its pivot at the origin.
-        The first group created will be called 'stack001', the second 'stack002', etc.
-        Adds the group and its contents to the tree view by calling add_stack_to_tree_view
-        Adding all the newly created items in a list for each iteration of the loop makes
-        this easier.
-        Offsets the groups by the amount from the separation spin box using the
-        offset_objs_in_x function.
-            Using a for loop that iterates over the stack groups will make this part
-            simple.
-            If all of the groups nodes are added to another list as they are created
-            you'll have them available here.
-            Returns True if it completes without an error.
-
-
         :return: True if it completes without an error
         """
         # Return none if verification fails
@@ -370,51 +187,33 @@ class BuilderGUI(QtWidgets.QDialog):
         mid_list = self.mid_lineEdit.text().split(", ")
         base_list = self.base_lineEdit.text().split(", ")
 
-        try:
-            # Create specified number of stacks
-            for index in range(1, int(self.stackAmt_lineEdit.text()) + 1):
-                # Randomize top, middle, and base objects
-                random.shuffle(top_list)
-                random.shuffle(mid_list)
-                random.shuffle(base_list)
+        # Create specified number of stacks
+        for index in range(1, int(self.stackAmt_lineEdit.text()) + 1):
+            # Randomize top, middle, and base objects
+            random.shuffle(top_list)
+            random.shuffle(mid_list)
+            random.shuffle(base_list)
 
-                # Duplicate objects and move base to world origin
-                base_transform = cmds.duplicate(base_list[0])[0]
-                mid_transform = cmds.duplicate(mid_list[0])[0]
-                top_transform = cmds.duplicate(top_list[0])[0]
+            # Duplicate objects and move base to world origin
+            top_transform = cmds.duplicate(top_list[0])[0]
+            mid_transform = cmds.duplicate(mid_list[0])[0]
+            base_transform = cmds.duplicate(base_list[0])[0]
+            cmds.move(0, 0, 0, base_transform, absolute=True)
 
-                # Center the base object to the world origin
-                cmds.move(0, 0, 0, base_transform, absolute=True)
+            # Stack objects
+            stacker.stack_objs(base_transform, mid_transform, top_transform)
 
-                # Stack objects
-                stacker.stack_objs([base_transform, mid_transform, top_transform])
-
-                # Create and empty group and parent the stacked objects to it
-                stack_group = cmds.group(em=True, name="stack%s" % ("%03d" % index))
-                cmds.parent(base_transform, stack_group)
-                cmds.parent(mid_transform, stack_group)
-                cmds.parent(top_transform, stack_group)
-        except RuntimeError:
-            # Return None if an error occurs
-            return None
+            # Create group and place stacked objects in it
+            stack_group = cmds.group(em=True, name="stack%s" % ("%03d" % index))
+            cmds.parent(top_transform, stack_group)
+            cmds.parent(mid_transform, stack_group)
+            cmds.parent(base_transform, stack_group)
 
         return True
 
     def verify_args(self):
         """
         Checks the GUI to make sure it has all the information it needs
-
-        Accepts no arguments.
-        The base, mid, and top parts must have a valid selection set.
-        Updated to check the three new spin boxes.
-            The stack count has to be at least 1.
-            The max height can be any value from 1 to 6.
-            The separation value must be at least 0.1.
-            If any of the arguments do not have a value:
-                It calls 'warn_user' with an appropriate message.
-        It returns None.
-            Returns True if all of the arguments have a valid value.
-
 
         :return: None if verification fails, else True
         """
@@ -479,26 +278,58 @@ class BuilderGUI(QtWidgets.QDialog):
 
         return True
 
-    def add_stack_to_tree_view(self):
+    def add_stack_to_tree_view(self, stack_node, contents_list):
         """
-        Accepts two arguments:
-            The name of a group node, e.g. 'stack001'
-            A list of the contents of that group (the transform nodes).
-        Called from the make_stacks method.
-        Adds the group name to the tree and nests the transform nodes under it.
-        It holds all of the groups created by the tool.
-        Clicking on an item in the tree view selects that item in Maya.
+        Builds GUI window with the ability to set selected objects, modify text boxes,
+        set the number of stacks, and create stacks.
 
-        :return:
+        :param stack_node: The name of a group node, e.g. 'stack001'
+        :type: str
+
+        :param contents_list: A list of the contents of that group (the stack node)
+        :type: list of ???
+
+        :return: N/A
         """
+        # Add the group name to the tree
+        # Nest the transform nodes under the tree
+        # Clicking on an item in the tree view selects that item in maya
 
-    def apply_xml(self):
+    @classmethod
+    def apply_xml(cls):
         """
         Allows the user to select an XML file and applies the values of the file to the
         stacks in the scene.
 
         :return: None if an invalid file is selected, else True
         """
+        # Prompt the user to select a file
+        filename, ffilter = QtWidgets.QFileDialog.getOpenFileName(caption='Open File',
+                                                                  dir='C:/Users/',
+                                                                  filter='Text Files ('
+                                                                        '*.txt)')
+        if not filename:
+            return None
+
+        # Checks to see that the dictionary has some values
+        xml_data = gen_utils.read_stack_xml(filename)
+        if not xml_data:
+            return None
+        stacks = xml_data['maya_stacks'].keys()
+        for stack in stacks:
+            # Apply values to the stacks in scene
+            for transform in xml_data['maya_stacks'][stack]:
+                # print(xml_data['maya_stacks'][stack][transform] + " " + transform)
+                cmds.move(xml_data['maya_stacks'][stack][transform], transform)
+
+        # root = 'stacks'
+        # maya_stacks
+            # stack001
+                # tx value="2"
+                # ty value="0"
+                # tz value="3"
+            # stack002 ...
+
 
     def tree_item_clicked(self):
         """
@@ -506,7 +337,7 @@ class BuilderGUI(QtWidgets.QDialog):
         Feel free to use the example from class or another method available on the tree
         view widget.
 
-        :return:
+        :return: None if an invalid file is selected, else True
         """
 
     # noinspection PyMethodMayBeStatic
