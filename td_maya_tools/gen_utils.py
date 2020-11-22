@@ -14,13 +14,16 @@
     A utility file to handle XML files and XML data
 
 :description:
-    A detailed description of what this module does.
+    This module is a utility class for the other parts of the stacker code. It has two
+    features. The first is a function which puts the contents of an XML file into a dict
+    and the second is a class which is a Python implementation of the autovivification
+    feature in Perl.
 
 :applications:
-    Any applications that are required to run this script, i.e. Maya.
 
 :see_also:
-    Any other code that you have written that this module is similar to.
+    stacker.py
+    builder_gui.py
 """
 
 #----------------------------------------------------------------------------------------#
@@ -61,26 +64,12 @@ def read_stack_xml(xml_path):
 #----------------------------------------------------------------------------- CLASSES --#
 
 class Autovivification(dict):
-    def _getitem_(self,item):
-        """
-        Might need to be a function not a class
-
-        :param item:
-        :type:
-
-        :return: XML value of item
-        :type:
-        """
+    """
+    This is a python implementation of Perl's autovivification feature
+    """
+    def __getitem__(self, item):
         try:
-            return dict._getitem_(self, item)
+            return dict.__getitem__(self, item)
         except KeyError:
             value = self[item] = type(self)()
             return value
-
-
-
-
-
-
-
-

@@ -14,9 +14,9 @@
     A tool that stacks random shapes on top of each other.
 
 :description:
-    This module takes 3 named objects, finds the top and bottom center points of each,
-    and stacks each one on top of the other by moving them a relative distance from their
-    bottom center point to the top center point of the previous object.
+    This module takes a list of named objects, finds the top and bottom center points of
+    each, and stacks each one on top of the other by moving them a relative distance from
+    their bottom center point to the top center point of the previous object.
 
 :applications:
     Maya
@@ -38,42 +38,48 @@ import maya.cmds as cmds
 #--------------------------------------------------------------------------- FUNCTIONS --#
 
 
-def offset_objs_in_x(obj1, obj2, offset):
+def offset_objs_in_x(static_name, moved_name, offset):
     """
-    This function moves the objects by the offset amount
+    This function offsets one object by 'x' amount from another one.
 
-	:param obj1: The transform node of an object that will not be moved.
-	:type: str
+    :param static_name: The transform node of an object that will not be moved.
+    :type: str
 
-	:param obj2: The transform node of an object that will be moved.
-	:type: str
+    :param moved_name: The transform node of an object that will be moved.
+    :type: str
 
-	:param offset: The amount of offset in 'x' that should be between the bounding boxes
-	of the two objects.
-	:type: double
+    :param offset: The amount of offset in 'x' that should be between the bounding boxes
+    of the two objects.
+    :type: float
 
-	:return: N/A
+    :return: N/A
     """
 
-    # Uses the xform command to get the bounding boxes of the two objects passed in.
-    # Moves the second object along the 'x' axis.
-    # The corresponding bounding box edges are separated by the value provided.
-    # Reference the video to see how this looks.
+    # Get the bounding boxes of the two objects passed in.
+    bb_static = cmds.xform(static_name, boundingBox=True, query=True)
+    bb_moved = cmds.xform(moved_name, boundingBox=True, query=True)
+
+    # Calculate position to move object
+    x_move = bb_static[3] + offset + abs((bb_moved[3] - bb_moved[0]) / 2)
+
+    # Move object along x-axis
+    cmds.move(x_move, 0, 0, moved_name, moveX=True)
 
 
-def stack_objs(obj_list):
+def stack_objs(objects):
     """
-    This function stacks 3 named objects one on top of the other.
+    This function stacks a list of named objects one on top of the other according to
+    their order in the list.
 
-    :param obj_list: The name of the transform nodes to be stacked
+    :param objects: A list containing all the objects to be stacked.
     :type: list of strings
-
+    
     :return: Success of stacking objects
     :type: bool
     """
 
     # Get result of verifying arguments
-    verification = verify_args(obj_list)
+    verification = verify_args(objects)
 
     # If verification failed, error is printed and script returns None
     if verification is None:
@@ -81,21 +87,22 @@ def stack_objs(obj_list):
         return None
 
     try:
-        for index in range(len(obj_list) - 1):
-            # Gets top center of mid and bottom center of top objects
-            moving_obj = obj_list[index + 1]
-            moving_obj_center = get_center_point(obj_list[index + 1], bottom=True)
-            base_obj_center = get_center_point(obj_list[index], top=True)
+        # Loop for length of objects list
+        for i in range(len(objects) - 1):
 
-            # Move the top object so it is resting on the mid object
-            create_stack(moving_obj, moving_obj_center, base_obj_center)
+            # Get top center of current and bottom center of next objects
+            current_top = get_center_point(objects[i], top=True)
+            next_bottom = get_center_point(objects[i+1], bottom=True)
+
+            # Move the next object so it is resting on the current object
+            create_stack(objects[i+1], next_bottom, current_top)
+
     except RuntimeError:
         # Return None if an error occurs
         return None
 
     # Return True
     return True
-
 
 def create_stack(obj_name, transform_from, transform_to):
     """
@@ -159,26 +166,30 @@ def get_center_point(obj_name, top=False, bottom=False):
         return [x, y, z]
 
 
-def verify_args(obj_list):
+def verify_args(objects):
     """
-    This function verifies the names of 3 transform nodes and returns the result
+    This function verifies the names of objects in the list and returns the result
 
-    :param obj_list: The name of the transform nodes.
+    :param objects: A list containing all the objects to be stacked.
     :type: list of strings
 
     :return: Whether or not any/all of the arguments have a value.
     :type: bool
     """
 
-    for obj in obj_list:
-        exists = cmds.objExists
-        if not exists:
-            # If one or more arguments don't have a value return None
-            return None
+    objs_clear = True
+
+    for obj in objects:
+        if not cmds.objExists(obj):
+            print("Object " + obj + " does not have a value")
+            objs_clear = False
 
     # If all of the arguments have a value return True
-    return True
-
+    if objs_clear:
+        return True
+    # If one or more arguments don't have a value return None
+    else:
+        return None
 
 #----------------------------------------------------------------------------------------#
 #----------------------------------------------------------------------------- CLASSES --#
