@@ -80,6 +80,15 @@ class BuilderGUI(QtWidgets.QDialog):
         Builds GUI window with the ability to set selected objects, modify text boxes,
         set the number of stacks, and create stacks.
 
+        Calls make_options_layout to get the options layout portion of the GUI.
+	    Adds a tree view widget that tracks the stack groups that are added.
+		    The tree view entries are set-up such that the name of the transforms nodes
+		    are under the group name.
+		    Clicking on something in the tree view calls tree_item_clicked
+	    'Load XML' button to position the stacks based on code in the 'apply_xml' method.
+	    'Make Stacks' button to run the logic to make each stack by calling 'make_stacks'.
+	    'Cancel' button, which calls 'self.close' (every GUI has it) to close the GUI.
+
         :return: N/A
         """
         # Create the main layout (Vertical)
@@ -145,9 +154,31 @@ class BuilderGUI(QtWidgets.QDialog):
         self.setWindowTitle('Builder')
         self.show()
 
+    def make_options_layout(self):
+        """
+        Uses a QFormLayout to place the different widgets, which will include:
+        Three buttons that set the selection for the top, middle, and bottom parts.
+        Three un-editable line edits that acknowledge that top, middle, and bottom parts
+        have been set.
+            They do this by showing the number of items and coloring the background a
+            green color.
+        Three labels that indicate the stack count, max, height, and separation values.
+        A QSpinBox that allows the user to enter a count, with a default value of 3.
+        A QSpinBox that allows the user to enter a max height from 1 to 6, with a default
+        of 3.
+        A QDoubleSpinBox that allows the user to set a separation value in .1 increments,
+        default value of .1
+
+        :return: QFormLayout
+        """
+
     def set_selection(self):
         """
         Updates the appropriate line edit with the transform of the selection that was set
+
+        Updated to show a count of objects instead of names.
+        Updated to show a green color in the background once the user sets a valid
+        selection.
 
         :return: N/A
         """
@@ -166,6 +197,34 @@ class BuilderGUI(QtWidgets.QDialog):
     def make_stacks(self):
         """
         Verifies user input and creates stacks of objects
+
+        Calls 'verify_args' to make sure the user has entered all the information it will
+        need.
+                If a None value is returned from 'verify_args', then this method
+                immediately returns a None value too.
+            Uses a for loop to create the stacks, based on the value of the count spin box
+                Uses the 'random' Python library to pick a base object and duplicates it.
+                Adds a nested for loop to decide how many random mid objects to add, based
+                on the height spin box.
+                    Uses random for each mid object so they can be different.
+                    Duplicates all the objects it needs.
+                Uses random to pick a top object and duplicates it.
+                The duplicated objects are used to make a stack using logic from the
+                stacker module.
+                Groups the pieces of the stack, with the base object sitting on the grid,
+                and its pivot at the origin.
+        The first group created will be called 'stack001', the second 'stack002', etc.
+        Adds the group and its contents to the tree view by calling add_stack_to_tree_view
+        Adding all the newly created items in a list for each iteration of the loop makes
+        this easier.
+        Offsets the groups by the amount from the separation spin box using the
+        offset_objs_in_x function.
+            Using a for loop that iterates over the stack groups will make this part
+            simple.
+            If all of the groups nodes are added to another list as they are created
+            you'll have them available here.
+            Returns True if it completes without an error.
+
 
         :return: True if it completes without an error
         """
@@ -195,7 +254,7 @@ class BuilderGUI(QtWidgets.QDialog):
                 cmds.move(0, 0, 0, base_transform, absolute=True)
 
                 # Stack objects
-                stacker.stack_objs(base_transform, mid_transform, top_transform)
+                stacker.stack_objs([base_transform, mid_transform, top_transform])
 
                 # Create and empty group and parent the stacked objects to it
                 stack_group = cmds.group(em=True, name="stack%s" % ("%03d" % index))
@@ -203,7 +262,7 @@ class BuilderGUI(QtWidgets.QDialog):
                 cmds.parent(mid_transform, stack_group)
                 cmds.parent(top_transform, stack_group)
         except RuntimeError:
-            # Return false if an error occurs
+            # Return None if an error occurs
             return None
 
         return True
@@ -211,6 +270,18 @@ class BuilderGUI(QtWidgets.QDialog):
     def verify_args(self):
         """
         Checks the GUI to make sure it has all the information it needs
+
+        Accepts no arguments.
+        The base, mid, and top parts must have a valid selection set.
+        Updated to check the three new spin boxes.
+            The stack count has to be at least 1.
+            The max height can be any value from 1 to 6.
+            The separation value must be at least 0.1.
+            If any of the arguments do not have a value:
+                It calls 'warn_user' with an appropriate message.
+        It returns None.
+            Returns True if all of the arguments have a valid value.
+
 
         :return: None if verification fails, else True
         """
@@ -274,6 +345,44 @@ class BuilderGUI(QtWidgets.QDialog):
             return None
 
         return True
+
+    def add_stack_to_tree_view(self):
+        """
+        Accepts two arguments:
+            The name of a group node, e.g. 'stack001'
+            A list of the contents of that group (the transform nodes).
+        Called from the make_stacks method.
+        Adds the group name to the tree and nests the transform nodes under it.
+        It holds all of the groups created by the tool.
+        Clicking on an item in the tree view selects that item in Maya.
+
+        :return:
+        """
+
+    def apply_xml(self):
+        """
+        Accepts no arguments.
+        Allows the user to select an XML file similar to how we allowed the user to select
+        text files in class.
+            If the user does not select a file then a warning is given and None is
+            returned.
+        Calls the 'read_stack_xml' function, passing it the user selected file path.
+            Check to see that the dictionary return by the function has some contents.
+            Returns None if it does not.
+        Loops through the contents of the dictionary and applies those values to the
+        stacks in the scene.
+
+        :return:
+        """
+
+    def tree_item_clicked(self):
+        """
+        Can accept up to two arguments depending on the logic you use.
+	    Feel free to use the example from class or another method available on the tree
+	    view widget.
+
+        :return:
+        """
 
     # noinspection PyMethodMayBeStatic
     def warn_user(self, title, message):

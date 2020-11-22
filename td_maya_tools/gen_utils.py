@@ -6,10 +6,12 @@
 
 """
 :author:
-    username
+    asy160030
+    bkp170130
+    bmc180001
 
 :synopsis:
-    A one line summary of what this module does.
+    A utility file to handle XML files and XML data
 
 :description:
     A detailed description of what this module does.
@@ -35,6 +37,15 @@ import os
 #----------------------------------------------------------------------------------------#
 #--------------------------------------------------------------------------- FUNCTIONS --#
 def read_stack_xml(xml_path):
+    """
+    Places the XML contents into a dictionary
+
+    :param xml_path: the path to an XML file on disk
+    :type: str
+
+    :return: XML Contents
+    :type: dict
+    """
     xml_fh = et.parse(xml_path)
     root = xml_fh.getroot()
 
@@ -51,6 +62,15 @@ def read_stack_xml(xml_path):
 
 class Autovivification(dict):
     def _getitem_(self,item):
+        """
+        Might need to be a function not a class
+
+        :param item:
+        :type:
+
+        :return: XML value of item
+        :type:
+        """
         try:
             return dict._getitem_(self, item)
         except KeyError:

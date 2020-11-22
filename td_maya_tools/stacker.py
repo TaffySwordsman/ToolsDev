@@ -38,44 +38,60 @@ import maya.cmds as cmds
 #--------------------------------------------------------------------------- FUNCTIONS --#
 
 
-def stack_objs(base_name, mid_name, top_name):
+def offset_objs_in_x(obj1, obj2, offset):
+    """
+    This function moves the objects by the offset amount
+
+	:param obj1: The transform node of an object that will not be moved.
+	:type: str
+
+	:param obj2: The transform node of an object that will be moved.
+	:type: str
+
+	:param offset: The amount of offset in 'x' that should be between the bounding boxes
+	of the two objects.
+	:type: double
+
+	:return: N/A
+    """
+
+    # Uses the xform command to get the bounding boxes of the two objects passed in.
+    # Moves the second object along the 'x' axis.
+    # The corresponding bounding box edges are separated by the value provided.
+    # Reference the video to see how this looks.
+
+
+def stack_objs(obj_list):
     """
     This function stacks 3 named objects one on top of the other.
 
-    :param base_name: The name of the base transform node.
-    :type: str
-
-    :param mid_name: The name of the mid transform node.
-    :type: str
-
-    :param top_name: The name of the top transform node.
-    :type: str
+    :param obj_list: The name of the transform nodes to be stacked
+    :type: list of strings
 
     :return: Success of stacking objects
     :type: bool
     """
 
     # Get result of verifying arguments
-    verification = verify_args(base_name, mid_name, top_name)
+    verification = verify_args(obj_list)
 
     # If verification failed, error is printed and script returns None
     if verification is None:
         print("Incorrect arguments given")
         return None
 
-    # Get top center of base and bottom center of mid objects
-    base_center_top = get_center_point(base_name, top=True)
-    mid_center_bottom = get_center_point(mid_name, bottom=True)
+    try:
+        for index in range(len(obj_list) - 1):
+            # Gets top center of mid and bottom center of top objects
+            moving_obj = obj_list[index + 1]
+            moving_obj_center = get_center_point(obj_list[index + 1], bottom=True)
+            base_obj_center = get_center_point(obj_list[index], top=True)
 
-    # Move the mid object so it is resting on the base object
-    create_stack(mid_name, mid_center_bottom, base_center_top)
-
-    # Gets top center of mid and bottom center of top objects
-    mid_center_top = get_center_point(mid_name, top=True)
-    top_center_bottom = get_center_point(top_name, bottom=True)
-
-    # Move the top object so it is resting on the mid object
-    create_stack(top_name, top_center_bottom, mid_center_top)
+            # Move the top object so it is resting on the mid object
+            create_stack(moving_obj, moving_obj_center, base_obj_center)
+    except RuntimeError:
+        # Return None if an error occurs
+        return None
 
     # Return True
     return True
@@ -86,14 +102,14 @@ def create_stack(obj_name, transform_from, transform_to):
     This function calculates relative distance between two points and moves the object
     that relative distance.
 
-    :param obj_name: The name of the base transform node.
+    :param obj_name: The name of the transform node to move.
     :type: str
 
-    :param transform_from: The bottom center of the object to move (x,y,z values).
-    :type: transform
+    :param transform_from: The bottom center of the object to move
+    :type: list of transform values (x, y, z)
 
-    :param transform_to: The point in space to place the object (x,y,z values).
-    :type: transform
+    :param transform_to: The top center of the object that will not move
+    :type: list of transform values (x, y, z)
 
     :return: N/A
     """
@@ -143,33 +159,25 @@ def get_center_point(obj_name, top=False, bottom=False):
         return [x, y, z]
 
 
-def verify_args(base_name, mid_name, top_name):
+def verify_args(obj_list):
     """
     This function verifies the names of 3 transform nodes and returns the result
 
-    :param base_name: The name of the base transform node.
-    :type: str
-
-    :param mid_name: The name of the mid transform node.
-    :type: str
-
-    :param top_name: The name of the top transform node.
-    :type: str
+    :param obj_list: The name of the transform nodes.
+    :type: list of strings
 
     :return: Whether or not any/all of the arguments have a value.
     :type: bool
     """
 
-    base_exists = cmds.objExists(base_name)
-    mid_exists = cmds.objExists(mid_name)
-    top_exists = cmds.objExists(top_name)
+    for obj in obj_list:
+        exists = cmds.objExists
+        if not exists:
+            # If one or more arguments don't have a value return None
+            return None
 
     # If all of the arguments have a value return True
-    if base_exists and mid_exists and top_exists:
-        return True
-
-    # If one or more arguments don't have a value return None
-    return None
+    return True
 
 
 #----------------------------------------------------------------------------------------#
