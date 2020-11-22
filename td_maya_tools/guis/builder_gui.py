@@ -186,31 +186,38 @@ class BuilderGUI(QtWidgets.QDialog):
         top_list = self.top_lineEdit.text().split(", ")
         mid_list = self.mid_lineEdit.text().split(", ")
         base_list = self.base_lineEdit.text().split(", ")
+        stack_objs_list = []
 
         # Create specified number of stacks
-        for index in range(1, int(self.stackAmt_lineEdit.text()) + 1):
-            # FIXME Allow for larger stacks (On mid section!!)
-            # Randomize top, middle, and base objects
+        stacks_count = int(self.stackAmt_lineEdit.text())
+        for index in range(1, stacks_count + 1):
+            # Randomize top and base objects
             random.shuffle(top_list)
-            random.shuffle(mid_list)
+            stack_objs_list.append(top_list[0])
             random.shuffle(base_list)
+            stack_objs_list.append(base_list[0])
+
+            # Randomize middle objects based on max_height
+            for i in range(self.max_height):
+                random.shuffle(mid_list)
+                stack_objs_list.append(mid_list[0])
 
             # Duplicate objects and move base to world origin
-            top_transform = cmds.duplicate(top_list[0])[0]
-            mid_transform = cmds.duplicate(mid_list[0])[0]
-            base_transform = cmds.duplicate(base_list[0])[0]
-            # FIXME move to top of origin
-            cmds.move(0, 0, 0, base_transform, absolute=True)
+            transforms_list = []
+            for obj in stack_objs_list:
+                transforms_list.append(cmds.duplicate(top_list[0])[0])
+
+            # Move the base object to the world origin, on top of the grid
+            base_move = cmds.xform(transforms_list[0], boundingBox=True, query=True)
+            cmds.move(0, -base_move[1], 0, transforms_list[0], relative=True)
 
             # Stack objects
-            # FIXME Add a list not individual transforms
-            stacker.stack_objs(base_transform, mid_transform, top_transform)
+            stacker.stack_objs(stack_objs_list)
 
             # Create group and place stacked objects in it
             stack_group = cmds.group(em=True, name="stack%s" % ("%03d" % index))
-            cmds.parent(top_transform, stack_group)
-            cmds.parent(mid_transform, stack_group)
-            cmds.parent(base_transform, stack_group)
+            for transform in transforms_list:
+                cmds.parent(transform, stack_group)
 
         return True
 
