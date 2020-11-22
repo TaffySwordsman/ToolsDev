@@ -145,6 +145,14 @@ class BuilderGUI(QtWidgets.QDialog):
         self.setWindowTitle('Builder')
         self.show()
 
+    def make_options_layout(self):
+        """
+        Builds GUI window with the ability to set selected objects, modify text boxes,
+        set the number of stacks, and create stacks.
+
+        :return: QFormLayout
+        """
+
     def set_selection(self):
         """
         Updates the appropriate line edit with the transform of the selection that was set
@@ -268,6 +276,31 @@ class BuilderGUI(QtWidgets.QDialog):
             return None
 
         return True
+
+    def add_stack_to_tree_view(self):
+        """
+        Builds GUI window with the ability to set selected objects, modify text boxes,
+        set the number of stacks, and create stacks.
+
+        :return: N/A
+        """
+
+    def apply_xml(self):
+        """
+        Allows the user to select an XML file and applies the values of the file to the
+        stacks in the scene.
+
+        :return: None if an invalid file is selected, else True
+        """
+
+    def tree_item_clicked(self):
+        """
+        Can accept up to two arguments depending on the logic you use.
+        Feel free to use the example from class or another method available on the tree
+        view widget.
+
+        :return: None if an invalid file is selected, else True
+        """
 
     # noinspection PyMethodMayBeStatic
     def warn_user(self, title, message):
