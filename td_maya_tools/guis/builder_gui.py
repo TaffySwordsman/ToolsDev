@@ -42,7 +42,7 @@ from shiboken2 import wrapInstance
 import random
 
 # Imports That You Wrote
-import td_maya_tools.stacker
+import td_maya_tools.stacker as stacker
 
 #----------------------------------------------------------------------------------------#
 #--------------------------------------------------------------------------- FUNCTIONS --#
@@ -178,27 +178,33 @@ class BuilderGUI(QtWidgets.QDialog):
         mid_list = self.mid_lineEdit.text().split(", ")
         base_list = self.base_lineEdit.text().split(", ")
 
-        # Create specified number of stacks
-        for index in range(1, int(self.stackAmt_lineEdit.text()) + 1):
-            # Randomize top, middle, and base objects
-            random.shuffle(top_list)
-            random.shuffle(mid_list)
-            random.shuffle(base_list)
+        try:
+            # Create specified number of stacks
+            for index in range(1, int(self.stackAmt_lineEdit.text()) + 1):
+                # Randomize top, middle, and base objects
+                random.shuffle(top_list)
+                random.shuffle(mid_list)
+                random.shuffle(base_list)
 
-            # Duplicate objects and move base to world origin
-            top_transform = cmds.duplicate(top_list[0])[0]
-            mid_transform = cmds.duplicate(mid_list[0])[0]
-            base_transform = cmds.duplicate(base_list[0])[0]
-            cmds.move(0, 0, 0, base_transform, absolute=True)
+                # Duplicate objects and move base to world origin
+                base_transform = cmds.duplicate(base_list[0])[0]
+                mid_transform = cmds.duplicate(mid_list[0])[0]
+                top_transform = cmds.duplicate(top_list[0])[0]
 
-            # Stack objects
-            td_maya_tools.stacker.stack_objs(base_transform, mid_transform, top_transform)
+                # Center the base object to the world origin
+                cmds.move(0, 0, 0, base_transform, absolute=True)
 
-            # Create group and place stacked objects in it
-            stack_group = cmds.group(em=True, name="stack%s" % ("%03d" % index))
-            cmds.parent(top_transform, stack_group)
-            cmds.parent(mid_transform, stack_group)
-            cmds.parent(base_transform, stack_group)
+                # Stack objects
+                stacker.stack_objs(base_transform, mid_transform, top_transform)
+
+                # Create and empty group and parent the stacked objects to it
+                stack_group = cmds.group(em=True, name="stack%s" % ("%03d" % index))
+                cmds.parent(base_transform, stack_group)
+                cmds.parent(mid_transform, stack_group)
+                cmds.parent(top_transform, stack_group)
+        except RuntimeError:
+            # Return false if an error occurs
+            return None
 
         return True
 
