@@ -72,8 +72,8 @@ def stack_objs(objects):
     their order in the list.
 
     :param objects: A list containing all the objects to be stacked.
-    :type: list
-
+    :type: list of strings
+    
     :return: Success of stacking objects
     :type: bool
     """
@@ -101,20 +101,22 @@ def stack_objs(objects):
         # Return None if an error occurs
         return None
 
+    # Return True
+    return True
 
 def create_stack(obj_name, transform_from, transform_to):
     """
     This function calculates relative distance between two points and moves the object
     that relative distance.
 
-    :param obj_name: The name of the base transform node.
+    :param obj_name: The name of the transform node to move.
     :type: str
 
-    :param transform_from: The bottom center of the object to move (x,y,z values).
-    :type: transform
+    :param transform_from: The bottom center of the object to move
+    :type: list of transform values (x, y, z)
 
-    :param transform_to: The point in space to place the object (x,y,z values).
-    :type: transform
+    :param transform_to: The top center of the object that will not move
+    :type: list of transform values (x, y, z)
 
     :return: N/A
     """
@@ -169,7 +171,7 @@ def verify_args(objects):
     This function verifies the names of objects in the list and returns the result
 
     :param objects: A list containing all the objects to be stacked.
-    :type: list
+    :type: list of strings
 
     :return: Whether or not any/all of the arguments have a value.
     :type: bool
@@ -188,7 +190,6 @@ def verify_args(objects):
     # If one or more arguments don't have a value return None
     else:
         return None
-
 
 #----------------------------------------------------------------------------------------#
 #----------------------------------------------------------------------------- CLASSES --#

@@ -11,7 +11,7 @@
     bmc180001
 
 :synopsis:
-    This module contains logic for Autovivification and an XML reader
+    A utility file to handle XML files and XML data
 
 :description:
     This module is a utility class for the other parts of the stacker code. It has two
@@ -20,7 +20,6 @@
     feature in Perl.
 
 :applications:
-    Maya
 
 :see_also:
     stacker.py
@@ -31,28 +30,38 @@
 #----------------------------------------------------------------------------- IMPORTS --#
 
 # Default Python Imports
-import maya.cmds as cmds
+from xml.dom import minidom
+import xml.etree.ElementTree as et
+import os
 
 # Imports That You Wrote
 
+
 #----------------------------------------------------------------------------------------#
 #--------------------------------------------------------------------------- FUNCTIONS --#
-
-
-def read_stack_xml(path):
+def read_stack_xml(xml_path):
     """
-    Puts the contents of an XML file into a dictionary
+    Places the XML contents into a dictionary
 
-    :param path: The path to an XML file on disk.
+    :param xml_path: the path to an XML file on disk
     :type: str
 
-    :return: A dictionary containing the contents of the XML file
+    :return: XML Contents
     :type: dict
     """
+    xml_fh = et.parse(xml_path)
+    root = xml_fh.getroot()
+
+    #children
+    contents = {}
+    root_children = root.getchildren()
+    for xml_item in root_children:
+        contents[xml_item.tag] = ""
+    return contents
+
 
 #----------------------------------------------------------------------------------------#
 #----------------------------------------------------------------------------- CLASSES --#
-
 
 class Autovivification(dict):
     """
