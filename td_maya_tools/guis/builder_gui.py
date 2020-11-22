@@ -189,6 +189,7 @@ class BuilderGUI(QtWidgets.QDialog):
 
         # Create specified number of stacks
         for index in range(1, int(self.stackAmt_lineEdit.text()) + 1):
+            # FIXME Allow for larger stacks (On mid section!!)
             # Randomize top, middle, and base objects
             random.shuffle(top_list)
             random.shuffle(mid_list)
@@ -198,9 +199,11 @@ class BuilderGUI(QtWidgets.QDialog):
             top_transform = cmds.duplicate(top_list[0])[0]
             mid_transform = cmds.duplicate(mid_list[0])[0]
             base_transform = cmds.duplicate(base_list[0])[0]
+            # FIXME move to top of origin
             cmds.move(0, 0, 0, base_transform, absolute=True)
 
             # Stack objects
+            # FIXME Add a list not individual transforms
             stacker.stack_objs(base_transform, mid_transform, top_transform)
 
             # Create group and place stacked objects in it
@@ -319,6 +322,7 @@ class BuilderGUI(QtWidgets.QDialog):
         for stack in stacks:
             # Apply values to the stacks in scene
             for transform in xml_data['maya_stacks'][stack]:
+                # FIXME Incorrect data probably
                 # print(xml_data['maya_stacks'][stack][transform] + " " + transform)
                 cmds.move(xml_data['maya_stacks'][stack][transform], transform)
 
@@ -329,7 +333,6 @@ class BuilderGUI(QtWidgets.QDialog):
                 # ty value="0"
                 # tz value="3"
             # stack002 ...
-
 
     def tree_item_clicked(self):
         """
