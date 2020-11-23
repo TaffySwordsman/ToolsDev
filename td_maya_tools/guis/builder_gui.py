@@ -342,20 +342,21 @@ class BuilderGUI(QtWidgets.QDialog):
             return None
 
         # Verify minimum stack number is met
-        try:
-            stack_amount = int(self.stack_box.text())
-            if stack_amount < 1:
-                error += "Must have at least 1 stack\n"
-        # Verify that stack input is an integer
-        except ValueError:
-            if self.stack_box.text() is None:
-                error += "You must specify the number of buildings to make"
-            else:
-                error += "The value for the number of buildings must be an integer\n"
+        stack_amount = int(self.stack_box.text())
+        if stack_amount < 1:
+            self.warn_user('Builder - Count',"You must make at least one stack")
+            return None
 
-        # Warn user if count errors exist
-        if error != "":
-            self.warn_user('Builder - Count', error)
+        # Verify minimum height number is met
+        stack_amount = int(self.height_box.value())
+        if stack_amount < 3 or stack_amount > 6:
+            self.warn_user('Builder - Height', "The height must be a value from 3 to 6")
+            return None
+
+        # Verify minimum separation number is valid
+        stack_amount = int(self.offset_box.value())
+        if stack_amount <= 0:
+            self.warn_user('Builder - Distance', "The distance must be greater than 0.00")
             return None
 
         return True
