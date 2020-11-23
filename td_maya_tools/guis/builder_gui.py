@@ -77,9 +77,9 @@ class BuilderGUI(QtWidgets.QDialog):
         self.top_lineEdit = None
         self.mid_lineEdit = None
         self.base_lineEdit = None
-        self.top_objs = None
-        self.mid_objs = None
-        self.base_objs = None
+        self.top_objs = []
+        self.mid_objs = []
+        self.base_objs = []
         self.stack_box = None
         self.height_box = None
         self.offset_box = None
