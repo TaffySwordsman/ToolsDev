@@ -270,6 +270,8 @@ class BuilderGUI(QtWidgets.QDialog):
         mid_list = self.mid_objs
         base_list = self.base_objs
 
+        stack_groups_list = []
+
         # Create specified number of stacks
         stacks_count = int(self.stack_box.text())
         for index in range(1, stacks_count + 1):
@@ -280,7 +282,7 @@ class BuilderGUI(QtWidgets.QDialog):
             stack_objs_list.append(base_list[0])
 
             # Randomize middle objects based on max_height
-            for i in range(self.height_box.value()):
+            for i in range(random.randint(1, int(self.height_box.value()))):
                 random.shuffle(mid_list)
                 stack_objs_list.append(mid_list[0])
 
@@ -297,13 +299,18 @@ class BuilderGUI(QtWidgets.QDialog):
             cmds.move(0, -base_move[1], 0, transforms_list[0], relative=True)
 
             # Stack objects
-            stacker.stack_objs(stack_objs_list)
+            stacker.stack_objs(transforms_list)
 
             # Create group and place stacked objects in it
             stack_group = cmds.group(em=True, name="stack%s" % ("%03d" % index))
+            stack_groups_list.append(stack_group)
             for transform in transforms_list:
                 cmds.parent(transform, stack_group)
             self.add_stack_to_tree_view(stack_group, transforms_list)
+
+        for i in range(len(stack_groups_list)):
+            stacker.offset_objs_in_x(stack_groups_list[i], stack_groups_list[i + 1],
+                                     self.offset_box.value)
 
         return True
 
