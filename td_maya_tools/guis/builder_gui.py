@@ -71,29 +71,92 @@ class BuilderGUI(QtWidgets.QDialog):
         """
         QtWidgets.QDialog.__init__(self, parent=get_maya_window())
         self.main_vLayout = None
+        self.main_hLayout = None
+        self.optLayout = None
         self.top_lineEdit = None
         self.mid_lineEdit = None
         self.base_lineEdit = None
-        self.stackAmt_lineEdit = None
-
+        self.stack_box = None
+        self.height_box = None
+        self.offset_box = None
+        
     def init_gui(self):
         """
-        Builds GUI window with the ability to set selected objects, modify text boxes,
-        set the number of stacks, and create stacks.
+        Builds GUI window with the ability to set selected objects, set stack size,
+        height, and separation values, load XML files, and create stacks.
 
         :return: N/A
         """
-        # Create the main layout (Vertical)
-        self.main_vLayout = QtWidgets.QVBoxLayout(self)
 
-        # Create the three row layouts (Horizontal)
+        # Create the main layouts (Vertical & Horizontal)
+        self.main_vLayout = QtWidgets.QVBoxLayout(self)
+        self.main_hLayout = QtWidgets.QHBoxLayout(self)
+
+        # Call make_options_layout to get the options layout portion of the GUI.
+        self.main_hLayout.addLayout(self.make_options_layout())
+
+        # Add tree view widget that tracks added stack groups
+        tree_view = QtWidgets.QTreeWidget()
+        tree_view.setHeaderLabel('Object Stacks')
+        self.main_hLayout.addWidget(tree_view)
+
+        # Add widgets to horizontal layout
+        self.main_vLayout.addLayout(self.main_hLayout)
+
+        # A horizontal layout to hold the 'Load XML', 'Make Stacks', and 'Cancel' buttons
+        buttons_hLayout = QtWidgets.QHBoxLayout()
+        self.main_vLayout.addLayout(buttons_hLayout)
+
+        # A 'Load XML' button to load the XML file by calling 'apply_xml'
+        xml_button = QtWidgets.QPushButton('Load XML')
+        xml_button.setStyleSheet("background-color: DarkOrange")
+        xml_button.clicked.connect(self.make_stacks)
+
+        # A 'Make Stacks' button to make each stack by calling 'make_stacks'
+        stack_button = QtWidgets.QPushButton('Make Stacks')
+        stack_button.clicked.connect(self.make_stacks)
+        # A 'Cancel' button, which calls 'self.close' to close the GUI
+        cancel_button = QtWidgets.QPushButton('Cancel')
+        cancel_button.clicked.connect(self.close)
+        # Add the two buttons to the button row
+        buttons_hLayout.addWidget(stack_button)
+        buttons_hLayout.addWidget(cancel_button)
+
+        # Configure the window
+        self.setGeometry(300, 300, 450, 250)
+        self.setWindowTitle('Builder')
+        self.show()
+
+    def make_options_layout(self):
+        """
+        Uses a QFormLayout to place the different widgets including 3 buttons that set
+        the selection for the top, middle, and bottom parts, 3 uneditable line edits that
+        acknowledge when the top, middle, and bottom parts have been set, 3 labels
+        indicating the stack count, max height, and separation values, and 3 spin boxes
+        which allow the user to set the values for the stack count, max height, and
+        separation values.
+
+        :return: QFormLayout
+        """
+
+        # Create the QFormLayout
+        self.optLayout = QtWidgets.QFormLayout(self)
+
+        # Create the row layouts
         top_hLayout = QtWidgets.QHBoxLayout()
         mid_hLayout = QtWidgets.QHBoxLayout()
         base_hLayout = QtWidgets.QHBoxLayout()
+        stack_hLayout = QtWidgets.QHBoxLayout()
+        height_hLayout = QtWidgets.QHBoxLayout()
+        offset_hLayout = QtWidgets.QHBoxLayout()
+
         # Add the row layouts to the main layout
-        self.main_vLayout.addLayout(top_hLayout)
-        self.main_vLayout.addLayout(mid_hLayout)
-        self.main_vLayout.addLayout(base_hLayout)
+        self.optLayout.addRow(top_hLayout)
+        self.optLayout.addRow(mid_hLayout)
+        self.optLayout.addRow(base_hLayout)
+        self.optLayout.addRow(stack_hLayout)
+        self.optLayout.addRow(height_hLayout)
+        self.optLayout.addRow(offset_hLayout)
 
         # Create the buttons and line edits
         button1 = QtWidgets.QPushButton('Set Top Parts')
@@ -102,6 +165,12 @@ class BuilderGUI(QtWidgets.QDialog):
         self.top_lineEdit = QtWidgets.QLineEdit()
         self.mid_lineEdit = QtWidgets.QLineEdit()
         self.base_lineEdit = QtWidgets.QLineEdit()
+
+        # Disable line edits
+        self.top_lineEdit.setEnabled(False)
+        self.mid_lineEdit.setEnabled(False)
+        self.base_lineEdit.setEnabled(False)
+
         # Name the buttons
         button1.setObjectName('button1')
         button2.setObjectName('button2')
@@ -118,41 +187,38 @@ class BuilderGUI(QtWidgets.QDialog):
         base_hLayout.addWidget(button3)
         base_hLayout.addWidget(self.base_lineEdit)
 
-        # A label and a line edit that allows the user to specify how many stacks to make
-        stackAmt_label = QtWidgets.QLabel('Number of Stacks to Make:')
-        self.stackAmt_lineEdit = QtWidgets.QLineEdit()
-        # Create a new row to hold the stack amount control
-        stackAmt_hLayout = QtWidgets.QHBoxLayout()
-        self.main_vLayout.addLayout(stackAmt_hLayout)
-        # Add the buttons / line edits to the a new row
-        stackAmt_hLayout.addWidget(stackAmt_label)
-        stackAmt_hLayout.addWidget(self.stackAmt_lineEdit)
+        # A label and a spin box that allows the user to specify how many stacks to make
+        stack_label = QtWidgets.QLabel('Set Stack Count')
+        self.stack_box = QtWidgets.QSpinBox()
+        self.stack_box.setValue(3)
 
-        # A horizontal layout to hold the 'Make Stacks' and 'Cancel' buttons
-        buttons_hLayout = QtWidgets.QHBoxLayout()
-        self.main_vLayout.addLayout(buttons_hLayout)
-        # A 'Make Stacks' button to make each stack by calling 'make_stacks'
-        stack_button = QtWidgets.QPushButton('Make Stacks')
-        stack_button.clicked.connect(self.make_stacks)
-        # A 'Cancel' button, which calls 'self.close' to close the GUI
-        cancel_button = QtWidgets.QPushButton('Cancel')
-        cancel_button.clicked.connect(self.close)
-        # Add the two buttons to the button row
-        buttons_hLayout.addWidget(stack_button)
-        buttons_hLayout.addWidget(cancel_button)
+        # Add the label / spin box to a new row
+        stack_hLayout.addWidget(stack_label)
+        stack_hLayout.addWidget(self.stack_box)
+        self.stack_box.setValue(3)
 
-        # Configure the window
-        self.setGeometry(300, 300, 350, 150)
-        self.setWindowTitle('Builder')
-        self.show()
+        # A label and a spin box that allows the user to specify the max height
+        height_label = QtWidgets.QLabel('Set Max Height')
+        self.height_box = QtWidgets.QSpinBox()
+        self.height_box.setValue(3)
+        self.height_box.setMinimum(1)
+        self.height_box.setMaximum(6)
 
-    def make_options_layout(self):
-        """
-        Builds GUI window with the ability to set selected objects, modify text boxes,
-        set the number of stacks, and create stacks.
+        # Add the label / spin box to the a new row
+        height_hLayout.addWidget(height_label)
+        height_hLayout.addWidget(self.height_box)
 
-        :return: QFormLayout
-        """
+        # A label and a double spin box that allows the user to specify the separation
+        offset_label = QtWidgets.QLabel('Set Separation')
+        self.offset_box = QtWidgets.QDoubleSpinBox()
+        self.offset_box.setValue(0.1)
+        self.offset_box.setSingleStep(0.1)
+
+        # Add the label / double spin box to the a new row
+        offset_hLayout.addWidget(offset_label)
+        offset_hLayout.addWidget(self.offset_box)
+
+        return self.optLayout
 
     def set_selection(self):
         """
@@ -160,17 +226,25 @@ class BuilderGUI(QtWidgets.QDialog):
 
         :return: N/A
         """
+
         sender = self.sender()
         if sender:
             user_selection = cmds.ls(selection=True)
             if len(user_selection) < 1:
                 return
+            numObjs = str(len(user_selection)) + " objects"
             if sender.objectName() == 'button1':
-                self.top_lineEdit.setText(', '.join(user_selection))
+                self.top_lineEdit.setText(numObjs)
+                self.top_lineEdit.setStyleSheet(
+                    "background-color: DarkOliveGreen; color: white")
             if sender.objectName() == 'button2':
-                self.mid_lineEdit.setText(', '.join(user_selection))
+                self.mid_lineEdit.setText(numObjs)
+                self.mid_lineEdit.setStyleSheet(
+                    "background-color: DarkOliveGreen; color: white")
             if sender.objectName() == 'button3':
-                self.base_lineEdit.setText(', '.join(user_selection))
+                self.base_lineEdit.setText(numObjs)
+                self.base_lineEdit.setStyleSheet(
+                    "background-color: DarkOliveGreen; color: white")
 
     def make_stacks(self):
         """
