@@ -296,7 +296,7 @@ class BuilderGUI(QtWidgets.QDialog):
 
             # Move the base object to the world origin, on top of the grid
             base_move = cmds.xform(transforms_list[0], boundingBox=True, query=True)
-            cmds.move(0, -base_move[1], 0, transforms_list[0], relative=True)
+            cmds.move(0, -base_move[1], 0, transforms_list[0], absolute=True)
 
             # Stack objects
             stacker.stack_objs(transforms_list)
@@ -308,9 +308,9 @@ class BuilderGUI(QtWidgets.QDialog):
                 cmds.parent(transform, stack_group)
             self.add_stack_to_tree_view(stack_group, transforms_list)
 
-        for i in range(len(stack_groups_list)):
+        for i in range(len(stack_groups_list) - 1):
             stacker.offset_objs_in_x(stack_groups_list[i], stack_groups_list[i + 1],
-                                     self.offset_box.value)
+                                     self.offset_box.value())
 
         return True
 
