@@ -113,7 +113,7 @@ class BuilderGUI(QtWidgets.QDialog):
         # A 'Load XML' button to load the XML file by calling 'apply_xml'
         xml_button = QtWidgets.QPushButton('Load XML')
         xml_button.setStyleSheet("background-color: DarkOrange")
-        xml_button.clicked.connect(self.make_stacks)
+        xml_button.clicked.connect(self.apply_xml)
 
         # A 'Make Stacks' button to make each stack by calling 'make_stacks'
         stack_button = QtWidgets.QPushButton('Make Stacks')
@@ -271,6 +271,7 @@ class BuilderGUI(QtWidgets.QDialog):
         base_list = self.base_objs
 
         stack_groups_list = []
+        self.tree_view.clear()
 
         # Create specified number of stacks
         stacks_count = int(self.stack_box.text())
@@ -388,6 +389,9 @@ class BuilderGUI(QtWidgets.QDialog):
         for obj in contents_list:
             child = QtWidgets.QTreeWidgetItem(root, [obj])
 
+        self.tree_view.currentItemChanged['QTreeWidgetItem*', 'QTreeWidgetItem*']\
+            .connect(self.tree_item_clicked)
+
         # Add the group name to the tree
         # Nest the transform nodes under the tree
         # Clicking on an item in the tree view selects that item in maya
@@ -428,14 +432,18 @@ class BuilderGUI(QtWidgets.QDialog):
                 # tz value="3"
             # stack002 ...
 
-    def tree_item_clicked(self):
+    # noinspection PyMethodMayBeStatic
+    def tree_item_clicked(self, item):
         """
-        Can accept up to two arguments depending on the logic you use.
-        Feel free to use the example from class or another method available on the tree
-        view widget.
+        Selects objects highlighted in the tree view
 
-        :return: None if an invalid file is selected, else True
+        :param item: A QTreeWidgetItem.
+        :type: QtWidgets.QTreeWidgetItem
+
+        :return: N/A
         """
+        if item:
+            cmds.select(item.text(0))
 
     # noinspection PyMethodMayBeStatic
     def warn_user(self, title, message):
