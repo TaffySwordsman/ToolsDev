@@ -292,6 +292,7 @@ class BuilderGUI(QtWidgets.QDialog):
             stack_group = cmds.group(em=True, name="stack%s" % ("%03d" % index))
             for transform in transforms_list:
                 cmds.parent(transform, stack_group)
+            self.add_stack_to_tree_view(stack_group)
 
         return True
 
@@ -371,7 +372,7 @@ class BuilderGUI(QtWidgets.QDialog):
         :type: str
 
         :param contents_list: A list of the contents of that group (the stack node)
-        :type: list of ???
+        :type: list of transforms
 
         :return: N/A
         """
