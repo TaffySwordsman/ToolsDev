@@ -76,6 +76,9 @@ class BuilderGUI(QtWidgets.QDialog):
         self.top_lineEdit = None
         self.mid_lineEdit = None
         self.base_lineEdit = None
+        self.top_objs = None
+        self.mid_objs = None
+        self.base_objs = None
         self.stack_box = None
         self.height_box = None
         self.offset_box = None
@@ -87,7 +90,6 @@ class BuilderGUI(QtWidgets.QDialog):
 
         :return: N/A
         """
-
         # Create the main layouts (Vertical & Horizontal)
         self.main_vLayout = QtWidgets.QVBoxLayout(self)
         self.main_hLayout = QtWidgets.QHBoxLayout(self)
@@ -114,11 +116,16 @@ class BuilderGUI(QtWidgets.QDialog):
 
         # A 'Make Stacks' button to make each stack by calling 'make_stacks'
         stack_button = QtWidgets.QPushButton('Make Stacks')
+        stack_button.setStyleSheet("background-color: green")
         stack_button.clicked.connect(self.make_stacks)
+
         # A 'Cancel' button, which calls 'self.close' to close the GUI
         cancel_button = QtWidgets.QPushButton('Cancel')
+        cancel_button.setStyleSheet("background-color: IndianRed")
         cancel_button.clicked.connect(self.close)
-        # Add the two buttons to the button row
+
+        # Add the buttons to the button row
+        buttons_hLayout.addWidget(xml_button)
         buttons_hLayout.addWidget(stack_button)
         buttons_hLayout.addWidget(cancel_button)
 
@@ -138,7 +145,6 @@ class BuilderGUI(QtWidgets.QDialog):
 
         :return: QFormLayout
         """
-
         # Create the QFormLayout
         self.optLayout = QtWidgets.QFormLayout(self)
 
@@ -226,7 +232,6 @@ class BuilderGUI(QtWidgets.QDialog):
 
         :return: N/A
         """
-
         sender = self.sender()
         if sender:
             user_selection = cmds.ls(selection=True)
@@ -234,14 +239,17 @@ class BuilderGUI(QtWidgets.QDialog):
                 return
             numObjs = str(len(user_selection)) + " objects"
             if sender.objectName() == 'button1':
+                self.top_objs = user_selection
                 self.top_lineEdit.setText(numObjs)
                 self.top_lineEdit.setStyleSheet(
                     "background-color: DarkOliveGreen; color: white")
             if sender.objectName() == 'button2':
+                self.mid_objs = user_selection
                 self.mid_lineEdit.setText(numObjs)
                 self.mid_lineEdit.setStyleSheet(
                     "background-color: DarkOliveGreen; color: white")
             if sender.objectName() == 'button3':
+                self.base_objs = user_selection
                 self.base_lineEdit.setText(numObjs)
                 self.base_lineEdit.setStyleSheet(
                     "background-color: DarkOliveGreen; color: white")
@@ -257,13 +265,13 @@ class BuilderGUI(QtWidgets.QDialog):
             return None
 
         # Create lists of object transforms from text boxes
-        top_list = self.top_lineEdit.text().split(", ")
-        mid_list = self.mid_lineEdit.text().split(", ")
-        base_list = self.base_lineEdit.text().split(", ")
+        top_list = self.top_objs
+        mid_list = self.mid_objs
+        base_list = self.base_objs
         stack_objs_list = []
 
         # Create specified number of stacks
-        stacks_count = int(self.stackAmt_lineEdit.text())
+        stacks_count = int(self.stack_box.text())
         for index in range(1, stacks_count + 1):
             # Randomize top and base objects
             random.shuffle(top_list)
@@ -272,7 +280,7 @@ class BuilderGUI(QtWidgets.QDialog):
             stack_objs_list.append(base_list[0])
 
             # Randomize middle objects based on max_height
-            for i in range(self.max_height):
+            for i in range(self.height_box.value()):
                 random.shuffle(mid_list)
                 stack_objs_list.append(mid_list[0])
 
@@ -302,40 +310,29 @@ class BuilderGUI(QtWidgets.QDialog):
 
         :return: None if verification fails, else True
         """
-        top_list = []
-        mid_list = []
-        base_list = []
         error = ""
 
-        # Create lists of object names if text box is not empty
-        if len(self.top_lineEdit.text()) > 0:
-            top_list = self.top_lineEdit.text().split(", ")
-        if len(self.mid_lineEdit.text()) > 0:
-            mid_list = self.mid_lineEdit.text().split(", ")
-        if len(self.base_lineEdit.text()) > 0:
-            base_list = self.base_lineEdit.text().split(", ")
-
         # Verify number and validity of top objects
-        if len(top_list) < 1:
+        if len(self.top_objs) < 1:
             error += "You must set a selection for the top parts.\n"
         else:
-            for transform in top_list:
+            for transform in self.top_objs:
                 if cmds.objExists(transform) is False:
                     error += "Top Stack transforms are invalid\n"
 
         # Verify number and validity of middle objects
-        if len(mid_list) < 1:
+        if len(self.mid_objs) < 1:
             error += "You must set a selection for the mid parts.\n"
         else:
-            for transform in mid_list:
+            for transform in self.mid_objs:
                 if cmds.objExists(transform) is False:
                     error += "Mid Stack transforms are invalid\n"
 
         # Verify number and validity of base objects
-        if len(base_list) < 1:
+        if len(self.base_objs) < 1:
             error += "You must set a selection for the base parts.\n"
         else:
-            for transform in base_list:
+            for transform in self.base_objs:
                 if cmds.objExists(transform) is False:
                     error += "Base Stack transforms are invalid\n"
 
@@ -346,12 +343,12 @@ class BuilderGUI(QtWidgets.QDialog):
 
         # Verify minimum stack number is met
         try:
-            stack_amount = int(self.stackAmt_lineEdit.text())
+            stack_amount = int(self.stack_box.text())
             if stack_amount < 1:
                 error += "Must have at least 1 stack\n"
         # Verify that stack input is an integer
         except ValueError:
-            if self.stackAmt_lineEdit.text() is None:
+            if self.stack_box.text() is None:
                 error += "You must specify the number of buildings to make"
             else:
                 error += "The value for the number of buildings must be an integer\n"
