@@ -355,7 +355,7 @@ class BuilderGUI(QtWidgets.QDialog):
             return None
 
         # Verify minimum separation number is valid
-        stack_amount = int(self.offset_box.value())
+        stack_amount = self.offset_box.value()
         if stack_amount <= 0:
             self.warn_user('Builder - Distance', "The distance must be greater than 0.00")
             return None
