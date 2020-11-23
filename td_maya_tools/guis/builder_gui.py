@@ -42,8 +42,8 @@ from shiboken2 import wrapInstance
 import random
 
 # Imports That You Wrote
-from td_maya_tools import stacker
-from td_maya_tools import gen_utils
+from td_maya_tools import stacker;reload(stacker)
+from td_maya_tools import gen_utils;reload(gen_utils)
 
 #----------------------------------------------------------------------------------------#
 #--------------------------------------------------------------------------- FUNCTIONS --#
@@ -113,7 +113,7 @@ class BuilderGUI(QtWidgets.QDialog):
         # A 'Load XML' button to load the XML file by calling 'apply_xml'
         xml_button = QtWidgets.QPushButton('Load XML')
         xml_button.setStyleSheet("background-color: DarkOrange")
-        xml_button.clicked.connect(self.make_stacks)
+        xml_button.clicked.connect(self.apply_xml)
 
         # A 'Make Stacks' button to make each stack by calling 'make_stacks'
         stack_button = QtWidgets.QPushButton('Make Stacks')
@@ -412,6 +412,9 @@ class BuilderGUI(QtWidgets.QDialog):
         xml_data = gen_utils.read_stack_xml(filename)
         if not xml_data:
             return None
+
+        print(xml_data)
+
         stacks = xml_data['maya_stacks'].keys()
         for stack in stacks:
             # Apply values to the stacks in scene
