@@ -73,6 +73,7 @@ class BuilderGUI(QtWidgets.QDialog):
         self.main_vLayout = None
         self.main_hLayout = None
         self.optLayout = None
+        self.tree_view = None
         self.top_lineEdit = None
         self.mid_lineEdit = None
         self.base_lineEdit = None
@@ -98,9 +99,9 @@ class BuilderGUI(QtWidgets.QDialog):
         self.main_hLayout.addLayout(self.make_options_layout())
 
         # Add tree view widget that tracks added stack groups
-        tree_view = QtWidgets.QTreeWidget()
-        tree_view.setHeaderLabel('Object Stacks')
-        self.main_hLayout.addWidget(tree_view)
+        self.tree_view = QtWidgets.QTreeWidget()
+        self.tree_view.setHeaderLabel('Object Stacks')
+        self.main_hLayout.addWidget(self.tree_view)
 
         # Add widgets to horizontal layout
         self.main_vLayout.addLayout(self.main_hLayout)
@@ -300,7 +301,7 @@ class BuilderGUI(QtWidgets.QDialog):
             stack_group = cmds.group(em=True, name="stack%s" % ("%03d" % index))
             for transform in transforms_list:
                 cmds.parent(transform, stack_group)
-            self.add_stack_to_tree_view(stack_group)
+            self.add_stack_to_tree_view(stack_group, transforms_list)
 
         return True
 
@@ -373,6 +374,10 @@ class BuilderGUI(QtWidgets.QDialog):
 
         :return: N/A
         """
+        root = QtWidgets.QTreeWidgetItem(self.tree_view, [stack_node])
+        for obj in contents_list:
+            child = QtWidgets.QTreeWidgetItem(root, [obj])
+
         # Add the group name to the tree
         # Nest the transform nodes under the tree
         # Clicking on an item in the tree view selects that item in maya
