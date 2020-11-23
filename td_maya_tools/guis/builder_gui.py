@@ -19,10 +19,8 @@
     When the user presses the 'Make Stacks' button, the GUI will verify it has all the
     necessary information to create stacks, and will then create stacks by duplicating
     geometry from the three sectioned out groups (base, middle, top).
-    A random object from the base selection will used to make the base, a random object
-    from the middle selection to form the middle of the stack, and a random object from
-    the top selection will be placed at the top.
-    The user will receive text feedback in the GUI based on the selections they set.
+    Random objects will be selected from the 3 groups of objects and they will be used
+    to make the stacks.
 
 :applications:
     Maya
@@ -385,16 +383,16 @@ class BuilderGUI(QtWidgets.QDialog):
 
         :return: N/A
         """
+        # Add the group name to the tree
         root = QtWidgets.QTreeWidgetItem(self.tree_view, [stack_node])
+
+        # Add all of the children nodes under the group
         for obj in contents_list:
             child = QtWidgets.QTreeWidgetItem(root, [obj])
 
+        # Clicking on an item in the tree view selects that item in Maya
         self.tree_view.currentItemChanged['QTreeWidgetItem*', 'QTreeWidgetItem*']\
             .connect(self.tree_item_clicked)
-
-        # Add the group name to the tree
-        # Nest the transform nodes under the tree
-        # Clicking on an item in the tree view selects that item in maya
 
     @classmethod
     def apply_xml(cls):
@@ -408,7 +406,7 @@ class BuilderGUI(QtWidgets.QDialog):
         filename, ffilter = QtWidgets.QFileDialog.getOpenFileName(caption='Open File',
                                                                   dir='C:/Users/',
                                                                   filter='Text Files ('
-                                                                        '*.txt)')
+                                                                        '*.txt *.xml)')
         if not filename:
             return None
 
@@ -431,14 +429,6 @@ class BuilderGUI(QtWidgets.QDialog):
                 if transform == "tz":
                     cmds.move(xml_data[stack][transform], stack, moveZ=True,
                               absolute=True)
-
-        # root = 'stacks'
-        # maya_stacks
-            # stack001
-                # tx value="2"
-                # ty value="0"
-                # tz value="3"
-            # stack002 ...
 
     # noinspection PyMethodMayBeStatic
     def tree_item_clicked(self, item):
