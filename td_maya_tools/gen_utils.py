@@ -60,13 +60,37 @@ def read_stack_xml(xml_path):
 
     #children
     contents = Autovivification()
-    xml_num = root.getchildren()
-    for xml_numb in xml_num:
-        xml_tran =xml_numb.getchildren()
-        for xml_mov in xml_tran:
-            value = xml_mov.attrib['value']
-            contents[xml_numb.tag] [xml_mov.tag] = value
+    main_xml = root.getchildren()
+    for maya_stacks_xml in main_xml:
+        stacks_xml_list = maya_stacks_xml.getchildren()
+        for stack_xml in stacks_xml_list:
+            stack_value = stack_xml.tag
+            for obj_xml in stack_xml:
+                obj_value = obj_xml.tag
+                trans_value = obj_xml.attrib['value']
+                contents[stack_value][obj_value] = trans_value
     return contents
+
+    # <?xml version="1.0" ?>
+    # <stacks>
+    #     <maya_stacks>
+    #         <stack001>
+    #             <tx value="2"/>
+    #             <ty value="0"/>
+    #             <tz value="3"/>
+    #         </stack001>
+    #         <stack002>
+    #             <tx value="4.5"/>
+    #             <ty value="0"/>
+    #             <tz value="4.5"/>
+    #         </stack002>
+    #         <stack003>
+    #             <tx value="5.5"/>
+    #             <ty value="1"/>
+    #             <tz value="5.5"/>
+    #         </stack003>
+    #     </maya_stacks>
+    # </stacks>
 
 
 #----------------------------------------------------------------------------------------#

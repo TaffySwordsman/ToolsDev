@@ -42,8 +42,8 @@ from shiboken2 import wrapInstance
 import random
 
 # Imports That You Wrote
-from td_maya_tools import stacker
-from td_maya_tools import gen_utils
+from td_maya_tools import stacker;reload(stacker)
+from td_maya_tools import gen_utils;reload(gen_utils)
 
 #----------------------------------------------------------------------------------------#
 #--------------------------------------------------------------------------- FUNCTIONS --#
@@ -416,13 +416,21 @@ class BuilderGUI(QtWidgets.QDialog):
         xml_data = gen_utils.read_stack_xml(filename)
         if not xml_data:
             return None
-        stacks = xml_data['maya_stacks'].keys()
+
+        stacks = xml_data.keys()
         for stack in stacks:
             # Apply values to the stacks in scene
-            for transform in xml_data['maya_stacks'][stack]:
-                # FIXME Incorrect data probably
-                # print(xml_data['maya_stacks'][stack][transform] + " " + transform)
-                cmds.move(xml_data['maya_stacks'][stack][transform], transform)
+            for transform in xml_data[stack]:
+                print(stack + " moves " + xml_data[stack][transform] + " in " + transform)
+                if transform == "tx":
+                    cmds.move(xml_data[stack][transform], stack, moveX=True,
+                              absolute=True)
+                if transform == "ty":
+                    cmds.move(xml_data[stack][transform], stack, moveY=True,
+                              absolute=True)
+                if transform == "tz":
+                    cmds.move(xml_data[stack][transform], stack, moveZ=True,
+                              absolute=True)
 
         # root = 'stacks'
         # maya_stacks
