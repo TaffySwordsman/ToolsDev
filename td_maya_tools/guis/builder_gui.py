@@ -269,14 +269,13 @@ class BuilderGUI(QtWidgets.QDialog):
         top_list = self.top_objs
         mid_list = self.mid_objs
         base_list = self.base_objs
-        stack_objs_list = []
 
         # Create specified number of stacks
         stacks_count = int(self.stack_box.text())
         for index in range(1, stacks_count + 1):
+            stack_objs_list = []
+
             # Randomize top and base objects
-            random.shuffle(top_list)
-            stack_objs_list.append(top_list[0])
             random.shuffle(base_list)
             stack_objs_list.append(base_list[0])
 
@@ -285,10 +284,13 @@ class BuilderGUI(QtWidgets.QDialog):
                 random.shuffle(mid_list)
                 stack_objs_list.append(mid_list[0])
 
+            random.shuffle(top_list)
+            stack_objs_list.append(top_list[0])
+
             # Duplicate objects and move base to world origin
             transforms_list = []
-            for obj in stack_objs_list:
-                transforms_list.append(cmds.duplicate(top_list[0])[0])
+            for i in range(len(stack_objs_list)):
+                transforms_list.append(cmds.duplicate(stack_objs_list[i])[0])
 
             # Move the base object to the world origin, on top of the grid
             base_move = cmds.xform(transforms_list[0], boundingBox=True, query=True)
