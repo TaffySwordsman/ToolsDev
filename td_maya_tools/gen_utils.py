@@ -39,24 +39,23 @@ import os
 
 #----------------------------------------------------------------------------------------#
 #--------------------------------------------------------------------------- FUNCTIONS --#
-def read_stack_xml(xml_path):
-    """
-    Places the XML contents into a dictionary
+ #Make sure file exists
+    if not os.path.isfile(xml_path):
+        print'The file does not exist'
+        return None
 
-    :param xml_path: the path to an XML file on disk
-    :type: str
-
-    :return: XML Contents
-    :type: dict
-    """
+    #Read in the XML and get the root
     xml_fh = et.parse(xml_path)
     root = xml_fh.getroot()
 
     #children
-    contents = {}
-    root_children = root.getchildren()
-    for xml_item in root_children:
-        contents[xml_item.tag] = ""
+    contents = Autovivification()
+    xml_num = root.getchildren()
+    for xml_numb in xml_num:
+        xml_tran =xml_numb.getchildren()
+        for xml_mov in xml_tran:
+            value = xml_mov.attrib['value']
+            contents[xml_numb.tag] [xml_mov.tag] = value
     return contents
 
 
