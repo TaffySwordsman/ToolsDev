@@ -39,8 +39,17 @@ import os
 
 #----------------------------------------------------------------------------------------#
 #--------------------------------------------------------------------------- FUNCTIONS --#
- #Make sure file exists
 def read_stack_xml(xml_path):
+    """
+    Places the XML contents into a dictionary
+
+    :param xml_path: the path to an XML file on disk
+    :type: str
+
+    :return: XML Contents
+    :type: dict
+    """
+    #Make sure file exists
     if not os.path.isfile(xml_path):
         print'The file does not exist'
         return None
